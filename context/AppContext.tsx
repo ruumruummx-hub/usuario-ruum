@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import type { ViewId, StepId } from '@/lib/types'
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ export interface UsuarioPerfil {
   id: string
   nombre: string
   apellido: string
-  email: string
+  email: string | null
   telefono: string | null
 }
 
@@ -38,6 +38,8 @@ interface AppContextType {
   viajeSeleccionado: ViajeUsuario | null
   setViajeSeleccionado: (v: ViajeUsuario | null) => void
   // Auth y datos
+  authReady: boolean
+  autenticado: boolean
   usuario: UsuarioPerfil | null
   misViajes: ViajeUsuario[]
   cargandoViajes: boolean
@@ -47,14 +49,12 @@ interface AppContextType {
 }
 
 export interface DatosSolicitud {
-  // Vehículo
   marca: string
   modelo: string
   anio?: string
   color?: string
   placas: string
   transmision?: string
-  // Origen
   origen_calle: string
   origen_numero?: string
   origen_colonia?: string
@@ -62,7 +62,6 @@ export interface DatosSolicitud {
   origen_cp?: string
   origen_contacto?: string
   origen_telefono?: string
-  // Destino
   destino_calle: string
   destino_numero?: string
   destino_colonia?: string
@@ -70,7 +69,6 @@ export interface DatosSolicitud {
   destino_cp?: string
   destino_contacto?: string
   destino_telefono?: string
-  // Otros
   referencias?: string
   instrucciones?: string
   fecha_programada?: string
@@ -79,43 +77,75 @@ export interface DatosSolicitud {
 
 const AppContext = createContext<AppContextType | null>(null)
 
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentView, setCurrentView] = useState<ViewId>('view-inicio')
   const [currentStep, setCurrentStep] = useState<StepId>(1)
   const [viajeSeleccionado, setViajeSeleccionado] = useState<ViajeUsuario | null>(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [autenticado, setAutenticado] = useState(false)
   const [usuario, setUsuario] = useState<UsuarioPerfil | null>(null)
   const [misViajes, setMisViajes] = useState<ViajeUsuario[]>([])
   const [cargandoViajes, setCargandoViajes] = useState(false)
 
-  // Cargar usuario autenticado al montar
+  // Verificar sesión al montar
   useEffect(() => {
-    sb.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      sb.from('usuarios')
-        .select('id, nombre, apellido, email, telefono')
-        .eq('auth_id', user.id)
-        .single()
-        .then(({ data }) => {
-          if (data) setUsuario(data as UsuarioPerfil)
-        })
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setAutenticado(true)
+        cargarPerfil(session.user.id)
+      }
+      setAuthReady(true)
     })
+
+    // Escuchar cambios de sesión
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setAutenticado(true)
+        cargarPerfil(session.user.id)
+      } else {
+        setAutenticado(false)
+        setUsuario(null)
+        setMisViajes([])
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  // Cargar viajes cuando hay usuario
+  const cargarPerfil = async (uid: string) => {
+    const { data } = await supabase
+      .from('usuarios')
+      .select('id, nombre, apellido, email, telefono')
+      .eq('auth_id', uid)
+      .single()
+    if (data) setUsuario(data as UsuarioPerfil)
+  }
+
+  // Cargar viajes cuando hay usuario y activar realtime
   useEffect(() => {
-    if (usuario) recargarViajes()
+    if (!usuario) return
+    recargarViajes()
+
+    // Realtime: actualizar lista cuando cambia cualquier viaje del usuario
+    const channel = supabase
+      .channel(`viajes-usuario-${usuario.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'viajes',
+        filter: `usuario_id=eq.${usuario.id}`,
+      }, () => {
+        recargarViajes()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [usuario])
 
   const recargarViajes = async () => {
     if (!usuario) return
     setCargandoViajes(true)
-
-    const { data, error } = await sb
+    const { data, error } = await supabase
       .from('viajes')
       .select(`
         id, folio, status, fecha_programada, hora_programada,
@@ -127,18 +157,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .eq('usuario_id', usuario.id)
       .order('created_at', { ascending: false })
 
-    if (!error && data) {
-      setMisViajes(data as unknown as ViajeUsuario[])
-    }
+    if (!error && data) setMisViajes(data as unknown as ViajeUsuario[])
     setCargandoViajes(false)
   }
 
   const solicitarViaje = async (datos: DatosSolicitud): Promise<boolean> => {
     if (!usuario) return false
-
     try {
-      // 1. Crear vehículo
-      const { data: vehiculo } = await sb
+      // 1. Registrar vehículo
+      const { data: vehiculo } = await supabase
         .from('vehiculos')
         .insert({
           usuario_id: usuario.id,
@@ -153,29 +180,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .single()
 
       // 2. Crear viaje
-      const { data: viaje, error } = await sb
+      const { data: viaje, error } = await supabase
         .from('viajes')
         .insert({
           usuario_id: usuario.id,
-          vehiculo_id: vehiculo?.id,
+          vehiculo_id: vehiculo?.id ?? null,
           origen_calle: datos.origen_calle.toUpperCase(),
-          origen_numero: datos.origen_numero,
-          origen_colonia: datos.origen_colonia?.toUpperCase(),
-          origen_estado: datos.origen_estado?.toUpperCase(),
-          origen_cp: datos.origen_cp,
-          origen_contacto: datos.origen_contacto?.toUpperCase(),
-          origen_telefono: datos.origen_telefono,
+          origen_numero: datos.origen_numero ?? null,
+          origen_colonia: datos.origen_colonia?.toUpperCase() ?? null,
+          origen_estado: datos.origen_estado?.toUpperCase() ?? null,
+          origen_cp: datos.origen_cp ?? null,
+          origen_contacto: datos.origen_contacto?.toUpperCase() ?? null,
+          origen_telefono: datos.origen_telefono ?? null,
           destino_calle: datos.destino_calle.toUpperCase(),
-          destino_numero: datos.destino_numero,
-          destino_colonia: datos.destino_colonia?.toUpperCase(),
-          destino_estado: datos.destino_estado?.toUpperCase(),
-          destino_cp: datos.destino_cp,
-          destino_contacto: datos.destino_contacto?.toUpperCase(),
-          destino_telefono: datos.destino_telefono,
-          referencias: datos.referencias,
-          instrucciones: datos.instrucciones,
-          fecha_programada: datos.fecha_programada,
-          hora_programada: datos.hora_programada,
+          destino_numero: datos.destino_numero ?? null,
+          destino_colonia: datos.destino_colonia?.toUpperCase() ?? null,
+          destino_estado: datos.destino_estado?.toUpperCase() ?? null,
+          destino_cp: datos.destino_cp ?? null,
+          destino_contacto: datos.destino_contacto?.toUpperCase() ?? null,
+          destino_telefono: datos.destino_telefono ?? null,
+          referencias: datos.referencias ?? null,
+          instrucciones: datos.instrucciones ?? null,
+          fecha_programada: datos.fecha_programada ?? null,
+          hora_programada: datos.hora_programada ?? null,
           status: 'Solicitud recibida',
         })
         .select()
@@ -183,18 +210,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (error) { console.error(error); return false }
 
-      // 3. Timeline
-      await sb.from('timeline_viaje').insert({
+      // 3. Registrar en timeline
+      await supabase.from('timeline_viaje').insert({
         viaje_id: viaje.id,
         evento: 'Solicitud creada por el usuario',
         actor: `${usuario.nombre} ${usuario.apellido}`,
         actor_tipo: 'usuario',
       })
 
-      // 4. Recargar lista
       await recargarViajes()
       return true
-
     } catch (e) {
       console.error(e)
       return false
@@ -207,6 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       showView: setCurrentView,
       setStep: setCurrentStep,
       viajeSeleccionado, setViajeSeleccionado,
+      authReady, autenticado,
       usuario, misViajes, cargandoViajes,
       solicitarViaje, recargarViajes,
     }}>

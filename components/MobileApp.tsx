@@ -9,9 +9,31 @@ import ViewMisViajes from './views/ViewMisViajes'
 import ViewDetalleViaje from './views/ViewDetalleViaje'
 import ViewEvidencia from './views/ViewEvidencia'
 import ViewCuenta from './views/ViewCuenta'
+import ViewLogin from './views/ViewLogin'
 
 export default function MobileApp() {
-  const { currentView } = useApp()
+  const { currentView, authReady, autenticado, showView } = useApp()
+
+  // Pantalla de carga mientras verifica sesión
+  if (!authReady) {
+    return (
+      <div className="mobile-mockup flex flex-col items-center justify-center bg-white">
+        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 animate-pulse">
+          <span className="text-white font-black text-xl">RR</span>
+        </div>
+        <p className="text-sm text-slate-400">Cargando...</p>
+      </div>
+    )
+  }
+
+  // Si no hay sesión → mostrar login
+  if (!autenticado) {
+    return (
+      <div className="mobile-mockup overflow-y-auto">
+        <ViewLogin onAuth={() => showView('view-inicio')} />
+      </div>
+    )
+  }
 
   const renderView = () => {
     switch (currentView) {
