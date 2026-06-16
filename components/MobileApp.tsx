@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import TopHeader from './TopHeader'
 import BottomNav from './BottomNav'
@@ -10,9 +11,24 @@ import ViewDetalleViaje from './views/ViewDetalleViaje'
 import ViewEvidencia from './views/ViewEvidencia'
 import ViewCuenta from './views/ViewCuenta'
 import ViewLogin from './views/ViewLogin'
+import ViewOnboarding from './views/ViewOnboarding'
+
+// Clave para saber si ya vio el onboarding
+const ONBOARDING_KEY = 'ruum_onboarding_done'
 
 export default function MobileApp() {
-  const { currentView, authReady, autenticado, showView } = useApp()
+  const { currentView, authReady, autenticado, showView, setStep } = useApp()
+
+  // Mostrar onboarding solo la primera vez
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem(ONBOARDING_KEY) === '1'
+  })
+
+  const handleOnboardingFinish = () => {
+    localStorage.setItem(ONBOARDING_KEY, '1')
+    setOnboardingDone(true)
+  }
 
   // Pantalla de carga mientras verifica sesión
   if (!authReady) {
@@ -26,24 +42,37 @@ export default function MobileApp() {
     )
   }
 
-  // Si no hay sesión → mostrar login
-  if (!autenticado) {
+  // 1. Sin sesión + primera vez → onboarding
+  if (!autenticado && !onboardingDone) {
     return (
       <div className="mobile-mockup overflow-y-auto">
-        <ViewLogin onAuth={() => showView('view-inicio')} />
+        <ViewOnboarding onFinish={handleOnboardingFinish} />
       </div>
     )
   }
 
+  // 2. Sin sesión + ya vio onboarding → login
+  if (!autenticado) {
+    return (
+      <div className="mobile-mockup overflow-y-auto">
+        <ViewLogin onAuth={() => {
+          setStep(1)
+          showView('view-inicio')
+        }} />
+      </div>
+    )
+  }
+
+  // 3. Con sesión → app normal
   const renderView = () => {
     switch (currentView) {
-      case 'view-inicio': return <ViewInicio />
-      case 'view-solicitar': return <ViewSolicitar />
-      case 'view-mis-viajes': return <ViewMisViajes />
+      case 'view-inicio':        return <ViewInicio />
+      case 'view-solicitar':     return <ViewSolicitar />
+      case 'view-mis-viajes':    return <ViewMisViajes />
       case 'view-detalle-viaje': return <ViewDetalleViaje />
-      case 'view-evidencia': return <ViewEvidencia />
-      case 'view-cuenta': return <ViewCuenta />
-      default: return <ViewInicio />
+      case 'view-evidencia':     return <ViewEvidencia />
+      case 'view-cuenta':        return <ViewCuenta />
+      default:                   return <ViewInicio />
     }
   }
 

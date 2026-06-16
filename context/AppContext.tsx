@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { ViewId, StepId } from '@/lib/types'
 
@@ -29,50 +29,32 @@ export interface UsuarioPerfil {
 }
 
 interface AppContextType {
-  // Navegación
   currentView: ViewId
   currentStep: StepId
   showView: (view: ViewId) => void
   setStep: (step: StepId) => void
-  // Viaje seleccionado para detalle
   viajeSeleccionado: ViajeUsuario | null
   setViajeSeleccionado: (v: ViajeUsuario | null) => void
-  // Auth y datos
   authReady: boolean
   autenticado: boolean
   usuario: UsuarioPerfil | null
   misViajes: ViajeUsuario[]
   cargandoViajes: boolean
-  // Acciones
   solicitarViaje: (datos: DatosSolicitud) => Promise<boolean>
   recargarViajes: () => Promise<void>
 }
 
 export interface DatosSolicitud {
-  marca: string
-  modelo: string
-  anio?: string
-  color?: string
-  placas: string
-  transmision?: string
-  origen_calle: string
-  origen_numero?: string
-  origen_colonia?: string
-  origen_estado?: string
-  origen_cp?: string
-  origen_contacto?: string
-  origen_telefono?: string
-  destino_calle: string
-  destino_numero?: string
-  destino_colonia?: string
-  destino_estado?: string
-  destino_cp?: string
-  destino_contacto?: string
-  destino_telefono?: string
-  referencias?: string
-  instrucciones?: string
-  fecha_programada?: string
-  hora_programada?: string
+  marca: string; modelo: string; anio?: string; color?: string
+  placas: string; transmision?: string
+  origen_calle: string; origen_numero?: string; origen_colonia?: string
+  origen_estado?: string; origen_cp?: string
+  origen_contacto?: string; origen_telefono?: string
+  destino_calle: string; destino_numero?: string; destino_colonia?: string
+  destino_estado?: string; destino_cp?: string
+  destino_contacto?: string; destino_telefono?: string
+  referencias?: string; instrucciones?: string
+  fecha_programada?: string; hora_programada?: string
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -87,24 +69,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [misViajes, setMisViajes] = useState<ViajeUsuario[]>([])
   const [cargandoViajes, setCargandoViajes] = useState(false)
 
-  // Verificar sesión al montar
+  // Ref para acceder al usuario más reciente dentro de funciones async
+  const usuarioRef = useRef<UsuarioPerfil | null>(null)
+  useEffect(() => { usuarioRef.current = usuario }, [usuario])
+
+  // ── Cargar perfil desde la tabla usuarios ──────────────────────────────────
+  const cargarPerfil = async (uid: string): Promise<UsuarioPerfil | null> => {
+    const { data } = await supabase
+      .from('usuarios')
+      .select('id, nombre, apellido, email, telefono')
+      .eq('auth_id', uid)
+      .single()
+    if (data) {
+      const perfil = data as UsuarioPerfil
+      setUsuario(perfil)
+      usuarioRef.current = perfil
+      return perfil
+    }
+    return null
+  }
+
+  // ── Verificar sesión al montar ─────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setAutenticado(true)
-        cargarPerfil(session.user.id)
+        await cargarPerfil(session.user.id)
       }
       setAuthReady(true)
     })
 
-    // Escuchar cambios de sesión
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setAutenticado(true)
-        cargarPerfil(session.user.id)
+        await cargarPerfil(session.user.id)
       } else {
         setAutenticado(false)
         setUsuario(null)
+        usuarioRef.current = null
         setMisViajes([])
       }
     })
@@ -112,38 +114,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const cargarPerfil = async (uid: string) => {
-    const { data } = await supabase
-      .from('usuarios')
-      .select('id, nombre, apellido, email, telefono')
-      .eq('auth_id', uid)
-      .single()
-    if (data) setUsuario(data as UsuarioPerfil)
-  }
-
-  // Cargar viajes cuando hay usuario y activar realtime
+  // ── Cargar viajes y activar realtime cuando hay usuario ───────────────────
   useEffect(() => {
     if (!usuario) return
     recargarViajes()
 
-    // Realtime: actualizar lista cuando cambia cualquier viaje del usuario
     const channel = supabase
       .channel(`viajes-usuario-${usuario.id}`)
       .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'viajes',
+        event: '*', schema: 'public', table: 'viajes',
         filter: `usuario_id=eq.${usuario.id}`,
-      }, () => {
-        recargarViajes()
-      })
+      }, () => { recargarViajes() })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [usuario])
 
   const recargarViajes = async () => {
-    if (!usuario) return
+    const u = usuarioRef.current
+    if (!u) return
     setCargandoViajes(true)
     const { data, error } = await supabase
       .from('viajes')
@@ -154,27 +143,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         conductores(nombre, apellido, calificacion),
         vehiculos(marca, modelo, placas)
       `)
-      .eq('usuario_id', usuario.id)
+      .eq('usuario_id', u.id)
       .order('created_at', { ascending: false })
 
     if (!error && data) setMisViajes(data as unknown as ViajeUsuario[])
     setCargandoViajes(false)
   }
 
+  // ── Solicitar viaje ────────────────────────────────────────────────────────
   const solicitarViaje = async (datos: DatosSolicitud): Promise<boolean> => {
-    if (!usuario) return false
+    // Si usuario aún no cargó, intentar obtenerlo de la sesión activa
+    let u = usuarioRef.current
+    if (!u) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return false
+      u = await cargarPerfil(user.id)
+      if (!u) return false
+    }
+
     try {
       // 1. Registrar vehículo
       const { data: vehiculo } = await supabase
         .from('vehiculos')
         .insert({
-          usuario_id: usuario.id,
+          usuario_id: u.id,
           marca: datos.marca.toUpperCase(),
           modelo: datos.modelo.toUpperCase(),
-          anio: datos.anio,
-          color: datos.color?.toUpperCase(),
+          anio: datos.anio ?? null,
+          color: datos.color?.toUpperCase() ?? null,
           placas: datos.placas.toUpperCase(),
-          transmision: datos.transmision,
+          transmision: datos.transmision ?? null,
         })
         .select()
         .single()
@@ -183,7 +181,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data: viaje, error } = await supabase
         .from('viajes')
         .insert({
-          usuario_id: usuario.id,
+          usuario_id: u.id,
           vehiculo_id: vehiculo?.id ?? null,
           origen_calle: datos.origen_calle.toUpperCase(),
           origen_numero: datos.origen_numero ?? null,
@@ -208,20 +206,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .select()
         .single()
 
-      if (error) { console.error(error); return false }
+      if (error) { console.error('Error creando viaje:', error); return false }
 
-      // 3. Registrar en timeline
+      // 3. Timeline
       await supabase.from('timeline_viaje').insert({
         viaje_id: viaje.id,
         evento: 'Solicitud creada por el usuario',
-        actor: `${usuario.nombre} ${usuario.apellido}`,
+        actor: `${u.nombre} ${u.apellido}`,
         actor_tipo: 'usuario',
       })
 
       await recargarViajes()
       return true
+
     } catch (e) {
-      console.error(e)
+      console.error('Error en solicitarViaje:', e)
       return false
     }
   }
