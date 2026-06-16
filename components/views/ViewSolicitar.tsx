@@ -1,36 +1,79 @@
 'use client'
 
+import { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faSpinner, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { StepId } from '@/lib/types'
 
 function StepIndicator({ step, currentStep }: { step: number; currentStep: number }) {
   const active = step <= currentStep
   return (
     <div className="flex flex-col items-center gap-1">
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-          active ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
-        }`}
-      >
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+        active ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
+      }`}>
         {step}
       </div>
       <span className={`text-[10px] font-medium ${active ? 'text-blue-600' : 'text-slate-500'}`}>
-        {step === 1 ? 'Vehículo' : step === 2 ? 'Ruta' : 'Resumen'}
+        {step === 1 ? 'Vehículo' : step === 2 ? 'Ruta' : 'Confirmar'}
       </span>
     </div>
   )
 }
 
+const inputCls = 'w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+const labelCls = 'block text-xs font-medium text-slate-500 mb-1'
+
 export default function ViewSolicitar() {
-  const { showView, currentStep, setStep } = useApp()
+  const { showView, currentStep, setStep, solicitarViaje } = useApp()
+  const [enviando, setEnviando] = useState(false)
+  const [exito, setExito] = useState(false)
+
+  // Datos del formulario
+  const [form, setForm] = useState({
+    // Vehículo
+    marca: '', modelo: '', anio: '', color: '', placas: '', transmision: '',
+    // Ruta
+    origen_calle: '', origen_numero: '', origen_colonia: '', origen_estado: '', origen_cp: '',
+    origen_contacto: '', origen_telefono: '',
+    destino_calle: '', destino_numero: '', destino_colonia: '', destino_estado: '', destino_cp: '',
+    destino_contacto: '', destino_telefono: '',
+    referencias: '', instrucciones: '',
+    fecha_programada: '', hora_programada: '',
+  })
+
+  const set = (k: keyof typeof form, v: string) =>
+    setForm(f => ({ ...f, [k]: v }))
 
   const nextStep = (step: StepId) => setStep(step)
 
-  const confirmTrip = () => {
-    alert('✅ ¡Tu traslado ya fue solicitado!\n\nHemos recibido tu solicitud #TR-8845. Nuestro equipo está asignando al mejor conductor certificado para ti. Te notificaremos en cuanto esté en camino.')
-    showView('view-mis-viajes')
+  const confirmar = async () => {
+    setEnviando(true)
+    const ok = await solicitarViaje(form)
+    setEnviando(false)
+    if (ok) {
+      setExito(true)
+      setTimeout(() => {
+        setExito(false)
+        setStep(1)
+        showView('view-mis-viajes')
+      }, 2500)
+    }
+  }
+
+  if (exito) {
+    return (
+      <div className="fade-in p-5 pb-24 flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 text-4xl" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">¡Solicitud enviada!</h3>
+        <p className="text-sm text-slate-500">
+          Hemos recibido tu solicitud. Nuestro equipo está asignando al mejor conductor certificado para ti.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -51,108 +94,238 @@ export default function ViewSolicitar() {
         <StepIndicator step={3} currentStep={currentStep} />
       </div>
 
-      {/* Paso 1 */}
+      {/* PASO 1 — Vehículo */}
       {currentStep === 1 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-slate-800">¿Qué vehículo vamos a mover?</h3>
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Marca y Modelo</label>
-              <input type="text" defaultValue="Nissan Versa" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Marca *</label>
+                <input type="text" value={form.marca}
+                  onChange={e => set('marca', e.target.value.toUpperCase())}
+                  placeholder="TOYOTA" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Modelo *</label>
+                <input type="text" value={form.modelo}
+                  onChange={e => set('modelo', e.target.value.toUpperCase())}
+                  placeholder="HILUX" className={inputCls} />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Año</label>
-                <input type="text" defaultValue="2022" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className={labelCls}>Año</label>
+                <input type="text" value={form.anio}
+                  onChange={e => set('anio', e.target.value)}
+                  placeholder="2022" className={inputCls} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Color</label>
-                <input type="text" defaultValue="Blanco" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className={labelCls}>Color</label>
+                <input type="text" value={form.color}
+                  onChange={e => set('color', e.target.value.toUpperCase())}
+                  placeholder="BLANCO" className={inputCls} />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Placas</label>
-              <input type="text" defaultValue="ABC-123" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" />
+              <label className={labelCls}>Placas *</label>
+              <input type="text" value={form.placas}
+                onChange={e => set('placas', e.target.value.toUpperCase())}
+                placeholder="XYZ-987" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Transmisión</label>
-              <select className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              <label className={labelCls}>Transmisión</label>
+              <select value={form.transmision} onChange={e => set('transmision', e.target.value)}
+                className={`${inputCls} bg-white`}>
+                <option value="">Seleccionar...</option>
                 <option>Automática</option>
-                <option>Estándar / Manual</option>
+                <option>Manual</option>
+                <option>CVT</option>
               </select>
             </div>
           </div>
-          <button onClick={() => nextStep(2)} className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl mt-6 hover:bg-blue-700 transition-colors">
-            Continuar
+          <button
+            onClick={() => nextStep(2)}
+            disabled={!form.marca || !form.modelo || !form.placas}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all mt-4"
+          >
+            Siguiente → Ruta
           </button>
         </div>
       )}
 
-      {/* Paso 2 */}
+      {/* PASO 2 — Ruta */}
       {currentStep === 2 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">¿De dónde sale y a dónde llega?</h3>
-          <div className="space-y-3">
-            <div className="relative">
-              <div className="absolute left-4 top-4 w-2.5 h-2.5 rounded-full bg-green-500 z-10" />
-              <input type="text" defaultValue="Av. Reforma 222, Juárez, CDMX" className="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <h3 className="text-lg font-semibold text-slate-800">¿De dónde a dónde?</h3>
+
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-green-700 uppercase tracking-wide">📍 Origen</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Calle *</label>
+                <input type="text" value={form.origen_calle}
+                  onChange={e => set('origen_calle', e.target.value.toUpperCase())}
+                  placeholder="AV. REFORMA" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Número</label>
+                <input type="text" value={form.origen_numero}
+                  onChange={e => set('origen_numero', e.target.value.toUpperCase())}
+                  placeholder="222" className={inputCls} />
+              </div>
             </div>
-            <div className="relative">
-              <div className="absolute left-4 top-4 w-2.5 h-2.5 rounded-full bg-red-500 z-10" />
-              <input type="text" defaultValue="Taller Norte, Blvd. Manuel Ávila Camacho, Satélite" className="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Colonia</label>
+                <input type="text" value={form.origen_colonia}
+                  onChange={e => set('origen_colonia', e.target.value.toUpperCase())}
+                  placeholder="CUAUHTÉMOC" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>CP</label>
+                <input type="text" value={form.origen_cp}
+                  onChange={e => set('origen_cp', e.target.value.replace(/\D/g,'').slice(0,5))}
+                  placeholder="06600" maxLength={5} className={inputCls} />
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">¿Cuándo lo necesitas?</label>
-              <select className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option>Lo antes posible</option>
-                <option>Programar para otra fecha</option>
-              </select>
+              <label className={labelCls}>Contacto en origen</label>
+              <input type="text" value={form.origen_contacto}
+                onChange={e => set('origen_contacto', e.target.value.toUpperCase())}
+                placeholder="NOMBRE DEL CONTACTO" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Tipo de servicio</label>
-              <select className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option>Traslado personal</option>
-                <option>Traslado empresarial</option>
-                <option>Traslado para agencia</option>
-              </select>
+              <label className={labelCls}>Teléfono origen</label>
+              <input type="tel" value={form.origen_telefono} maxLength={12}
+                onChange={e => {
+                  const d = e.target.value.replace(/\D/g,'').slice(0,10)
+                  set('origen_telefono', d.length<=3?d:d.length<=6?`${d.slice(0,3)}-${d.slice(3)}`:`${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`)
+                }}
+                placeholder="55-0000-0000" className={inputCls} />
             </div>
           </div>
-          <div className="flex gap-3 mt-6">
-            <button onClick={() => nextStep(1)} className="flex-1 bg-slate-100 text-slate-700 font-semibold py-3.5 rounded-xl hover:bg-slate-200 transition-colors">Atrás</button>
-            <button onClick={() => nextStep(3)} className="flex-[2] bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 transition-colors">Ver cotización</button>
+
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-red-700 uppercase tracking-wide">🏁 Destino</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Calle *</label>
+                <input type="text" value={form.destino_calle}
+                  onChange={e => set('destino_calle', e.target.value.toUpperCase())}
+                  placeholder="TALLER NORTE" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Número</label>
+                <input type="text" value={form.destino_numero}
+                  onChange={e => set('destino_numero', e.target.value.toUpperCase())}
+                  placeholder="100" className={inputCls} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Colonia</label>
+                <input type="text" value={form.destino_colonia}
+                  onChange={e => set('destino_colonia', e.target.value.toUpperCase())}
+                  placeholder="SATÉLITE" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>CP</label>
+                <input type="text" value={form.destino_cp}
+                  onChange={e => set('destino_cp', e.target.value.replace(/\D/g,'').slice(0,5))}
+                  placeholder="53100" maxLength={5} className={inputCls} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Contacto en destino</label>
+              <input type="text" value={form.destino_contacto}
+                onChange={e => set('destino_contacto', e.target.value.toUpperCase())}
+                placeholder="NOMBRE DEL CONTACTO" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Teléfono destino</label>
+              <input type="tel" value={form.destino_telefono} maxLength={12}
+                onChange={e => {
+                  const d = e.target.value.replace(/\D/g,'').slice(0,10)
+                  set('destino_telefono', d.length<=3?d:d.length<=6?`${d.slice(0,3)}-${d.slice(3)}`:`${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`)
+                }}
+                placeholder="55-0000-0000" className={inputCls} />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Fecha del traslado</label>
+            <input type="date" value={form.fecha_programada}
+              onChange={e => set('fecha_programada', e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Hora</label>
+            <input type="time" value={form.hora_programada}
+              onChange={e => set('hora_programada', e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Instrucciones especiales</label>
+            <textarea value={form.instrucciones}
+              onChange={e => set('instrucciones', e.target.value)}
+              placeholder="Llamar 10 min antes, acceso por calle lateral..."
+              rows={3} className={inputCls} />
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={() => nextStep(1)}
+              className="flex-1 border border-slate-300 text-slate-600 font-bold py-4 rounded-xl">
+              ← Vehículo
+            </button>
+            <button onClick={() => nextStep(3)}
+              disabled={!form.origen_calle || !form.destino_calle}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl">
+              Confirmar →
+            </button>
           </div>
         </div>
       )}
 
-      {/* Paso 3 */}
+      {/* PASO 3 — Confirmación */}
       {currentStep === 3 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">Revisión y cotización</h3>
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-              <span className="text-sm text-slate-500">Vehículo</span>
-              <span className="text-sm font-semibold text-slate-800">Nissan Versa (ABC-123)</span>
-            </div>
-            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-              <span className="text-sm text-slate-500">Ruta</span>
-              <span className="text-sm font-semibold text-slate-800 text-right">Reforma 222<br />→ Taller Norte</span>
-            </div>
-            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-              <span className="text-sm text-slate-500">Servicio</span>
-              <span className="text-sm font-semibold text-slate-800">Traslado personal (Lo antes posible)</span>
-            </div>
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-base font-bold text-slate-800">Tarifa estimada</span>
-              <span className="text-2xl font-bold text-blue-600">$1,850.00</span>
-            </div>
+          <h3 className="text-lg font-semibold text-slate-800">Confirma tu solicitud</h3>
+
+          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-slate-500 uppercase">🚗 Vehículo</p>
+            <p className="font-semibold">{form.marca} {form.modelo} · {form.placas}</p>
+            {form.color && <p className="text-sm text-slate-500">{form.color} · {form.transmision || 'Sin especificar'}</p>}
           </div>
-          <div className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg">
-            <FontAwesomeIcon icon={faInfoCircle} className="text-blue-600 mt-0.5" />
-            <p className="text-xs text-blue-800">Esta tarifa incluye el traslado, el seguro de responsabilidad civil y la documentación fotográfica completa del vehículo.</p>
+
+          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-slate-500 uppercase">📍 Ruta</p>
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center pt-1">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="w-0.5 h-8 bg-slate-200 my-1" />
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{form.origen_calle}{form.origen_numero ? ` ${form.origen_numero}` : ''}, {form.origen_colonia}</p>
+                <p className="text-sm font-semibold mt-3">{form.destino_calle}{form.destino_numero ? ` ${form.destino_numero}` : ''}, {form.destino_colonia}</p>
+              </div>
+            </div>
+            {form.fecha_programada && (
+              <p className="text-sm text-slate-500">📅 {form.fecha_programada} {form.hora_programada && `· ${form.hora_programada}`}</p>
+            )}
           </div>
-          <div className="flex gap-3 mt-6">
-            <button onClick={() => nextStep(2)} className="flex-1 bg-slate-100 text-slate-700 font-semibold py-3.5 rounded-xl hover:bg-slate-200 transition-colors">Atrás</button>
-            <button onClick={confirmTrip} className="flex-[2] bg-green-600 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-200">Confirmar solicitud</button>
+
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => nextStep(2)}
+              className="flex-1 border border-slate-300 text-slate-600 font-bold py-4 rounded-xl">
+              ← Ruta
+            </button>
+            <button onClick={confirmar} disabled={enviando}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">
+              {enviando
+                ? <><FontAwesomeIcon icon={faSpinner} className="animate-spin" /> Enviando...</>
+                : '✓ Solicitar traslado'
+              }
+            </button>
           </div>
         </div>
       )}
