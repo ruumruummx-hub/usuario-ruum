@@ -32,7 +32,7 @@ export default function MobileApp() {
   // Cargando sesión
   if (!authReady) {
     return (
-      <div className="mobile-mockup flex flex-col items-center justify-center bg-white">
+      <div className="app-shell flex flex-col items-center justify-center bg-white">
         <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 animate-pulse">
           <span className="text-white font-black text-xl">RR</span>
         </div>
@@ -44,7 +44,7 @@ export default function MobileApp() {
   // Sin sesión → onboarding (primera vez) o login directo (ya pasó por onboarding)
   if (!autenticado) {
     return (
-      <div className="mobile-mockup overflow-y-auto">
+      <div className="app-shell overflow-y-auto">
         <ViewOnboardingUsuario onAuth={handleAuth} />
       </div>
     )
@@ -64,9 +64,9 @@ export default function MobileApp() {
   }
 
   return (
-    <div className="mobile-mockup flex flex-col">
+    <div className="app-shell flex flex-col">
       <TopHeader />
-      <main className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
+      <main className="app-main flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
         {renderView()}
       </main>
       <BottomNav />

@@ -5,25 +5,26 @@ import { useApp } from '@/context/AppContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faSpinner, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import type { StepId } from '@/lib/types'
+import { RRButton, RRCard } from '@/components/rr'
 
 function StepIndicator({ step, currentStep }: { step: number; currentStep: number }) {
   const active = step <= currentStep
   return (
     <div className="flex flex-col items-center gap-1">
       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-        active ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
+        active ? 'bg-rr-primary text-white' : 'bg-rr-gray200 text-rr-gray500'
       }`}>
         {step}
       </div>
-      <span className={`text-[10px] font-medium ${active ? 'text-blue-600' : 'text-slate-500'}`}>
+      <span className={`text-[10px] font-medium ${active ? 'text-rr-primary' : 'text-rr-gray500'}`}>
         {step === 1 ? 'Vehículo' : step === 2 ? 'Ruta' : 'Confirmar'}
       </span>
     </div>
   )
 }
 
-const inputCls = 'w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-const labelCls = 'block text-xs font-medium text-slate-500 mb-1'
+const inputCls = 'w-full border border-rr-gray200 rounded-rrMd bg-white px-4 py-3 text-sm text-rr-black focus:outline-none focus:ring-2 focus:ring-rr-primary/20 focus:border-rr-primary'
+const labelCls = 'block text-xs font-bold uppercase tracking-wide text-rr-gray500 mb-1'
 
 export default function ViewSolicitar() {
   const { showView, currentStep, setStep, solicitarViaje } = useApp()
@@ -65,11 +66,11 @@ export default function ViewSolicitar() {
   if (exito) {
     return (
       <div className="fade-in p-5 pb-24 flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 text-4xl" />
+        <div className="w-20 h-20 bg-rr-successLight rounded-full flex items-center justify-center mb-4">
+          <FontAwesomeIcon icon={faCheckCircle} className="text-rr-success text-4xl" />
         </div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">¡Solicitud enviada!</h3>
-        <p className="text-sm text-slate-500">
+        <h3 className="text-xl font-black text-rr-black mb-2">¡Solicitud enviada!</h3>
+        <p className="text-sm text-rr-gray500">
           Hemos recibido tu solicitud. Nuestro equipo está asignando al mejor conductor certificado para ti.
         </p>
       </div>
@@ -79,27 +80,27 @@ export default function ViewSolicitar() {
   return (
     <div className="fade-in p-5 pb-24">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => showView('view-inicio')} className="text-slate-500 hover:text-slate-800">
+        <button onClick={() => showView('view-inicio')} className="text-rr-gray500 hover:text-rr-black">
           <FontAwesomeIcon icon={faArrowLeft} className="text-lg" />
         </button>
-        <h2 className="text-xl font-bold text-slate-800">Solicitar traslado</h2>
+        <h2 className="text-xl font-black text-rr-black">Solicitar traslado</h2>
       </div>
 
       {/* Stepper */}
       <div className="flex items-center justify-between mb-6 px-2">
         <StepIndicator step={1} currentStep={currentStep} />
-        <div className="flex-1 h-0.5 bg-slate-200 mx-2" />
+        <div className="flex-1 h-0.5 bg-rr-gray200 mx-2" />
         <StepIndicator step={2} currentStep={currentStep} />
-        <div className="flex-1 h-0.5 bg-slate-200 mx-2" />
+        <div className="flex-1 h-0.5 bg-rr-gray200 mx-2" />
         <StepIndicator step={3} currentStep={currentStep} />
       </div>
 
       {/* PASO 1 — Vehículo */}
       {currentStep === 1 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">¿Qué vehículo vamos a mover?</h3>
+          <h3 className="text-lg font-black text-rr-black">¿Qué vehículo vamos a mover?</h3>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Marca *</label>
                 <input type="text" value={form.marca}
@@ -113,7 +114,7 @@ export default function ViewSolicitar() {
                   placeholder="HILUX" className={inputCls} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Año</label>
                 <input type="text" value={form.anio}
@@ -144,24 +145,25 @@ export default function ViewSolicitar() {
               </select>
             </div>
           </div>
-          <button
+          <RRButton
             onClick={() => nextStep(2)}
             disabled={!form.marca || !form.modelo || !form.placas}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all mt-4"
+            fullWidth
+            className="mt-4"
           >
             Siguiente → Ruta
-          </button>
+          </RRButton>
         </div>
       )}
 
       {/* PASO 2 — Ruta */}
       {currentStep === 2 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">¿De dónde a dónde?</h3>
+          <h3 className="text-lg font-black text-rr-black">¿De dónde a dónde?</h3>
 
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-bold text-green-700 uppercase tracking-wide">📍 Origen</p>
-            <div className="grid grid-cols-2 gap-3">
+          <RRCard elevated={false} className="bg-rr-successLight/60 border-rr-successLight p-4 space-y-3">
+            <p className="text-xs font-bold text-rr-success uppercase tracking-wide">📍 Origen</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Calle *</label>
                 <input type="text" value={form.origen_calle}
@@ -175,7 +177,7 @@ export default function ViewSolicitar() {
                   placeholder="222" className={inputCls} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Colonia</label>
                 <input type="text" value={form.origen_colonia}
@@ -204,11 +206,11 @@ export default function ViewSolicitar() {
                 }}
                 placeholder="55-0000-0000" className={inputCls} />
             </div>
-          </div>
+          </RRCard>
 
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-bold text-red-700 uppercase tracking-wide">🏁 Destino</p>
-            <div className="grid grid-cols-2 gap-3">
+          <RRCard elevated={false} className="bg-rr-warningLight/70 border-rr-warningLight p-4 space-y-3">
+            <p className="text-xs font-bold text-rr-warning uppercase tracking-wide">🏁 Destino</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Calle *</label>
                 <input type="text" value={form.destino_calle}
@@ -222,7 +224,7 @@ export default function ViewSolicitar() {
                   placeholder="100" className={inputCls} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Colonia</label>
                 <input type="text" value={form.destino_colonia}
@@ -251,7 +253,7 @@ export default function ViewSolicitar() {
                 }}
                 placeholder="55-0000-0000" className={inputCls} />
             </div>
-          </div>
+          </RRCard>
 
           <div>
             <label className={labelCls}>Fecha del traslado</label>
@@ -271,16 +273,17 @@ export default function ViewSolicitar() {
               rows={3} className={inputCls} />
           </div>
 
-          <div className="flex gap-3">
-            <button onClick={() => nextStep(1)}
-              className="flex-1 border border-slate-300 text-slate-600 font-bold py-4 rounded-xl">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <RRButton onClick={() => nextStep(1)}
+              variant="secondary"
+              className="flex-1">
               ← Vehículo
-            </button>
-            <button onClick={() => nextStep(3)}
+            </RRButton>
+            <RRButton onClick={() => nextStep(3)}
               disabled={!form.origen_calle || !form.destino_calle}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl">
+              className="flex-1">
               Confirmar →
-            </button>
+            </RRButton>
           </div>
         </div>
       )}
@@ -288,21 +291,21 @@ export default function ViewSolicitar() {
       {/* PASO 3 — Confirmación */}
       {currentStep === 3 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">Confirma tu solicitud</h3>
+          <h3 className="text-lg font-black text-rr-black">Confirma tu solicitud</h3>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-bold text-slate-500 uppercase">🚗 Vehículo</p>
+          <RRCard className="p-4 space-y-3">
+            <p className="text-xs font-bold text-rr-gray500 uppercase">🚗 Vehículo</p>
             <p className="font-semibold">{form.marca} {form.modelo} · {form.placas}</p>
-            {form.color && <p className="text-sm text-slate-500">{form.color} · {form.transmision || 'Sin especificar'}</p>}
-          </div>
+            {form.color && <p className="text-sm text-rr-gray500">{form.color} · {form.transmision || 'Sin especificar'}</p>}
+          </RRCard>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-bold text-slate-500 uppercase">📍 Ruta</p>
+          <RRCard className="p-4 space-y-3">
+            <p className="text-xs font-bold text-rr-gray500 uppercase">📍 Ruta</p>
             <div className="flex gap-3">
               <div className="flex flex-col items-center pt-1">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <div className="w-0.5 h-8 bg-slate-200 my-1" />
-                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <div className="w-2 h-2 rounded-full bg-rr-success" />
+                <div className="w-0.5 h-8 bg-rr-gray200 my-1" />
+                <div className="w-2 h-2 rounded-full bg-rr-warning" />
               </div>
               <div>
                 <p className="text-sm font-semibold">{form.origen_calle}{form.origen_numero ? ` ${form.origen_numero}` : ''}, {form.origen_colonia}</p>
@@ -310,22 +313,23 @@ export default function ViewSolicitar() {
               </div>
             </div>
             {form.fecha_programada && (
-              <p className="text-sm text-slate-500">📅 {form.fecha_programada} {form.hora_programada && `· ${form.hora_programada}`}</p>
+              <p className="text-sm text-rr-gray500">📅 {form.fecha_programada} {form.hora_programada && `· ${form.hora_programada}`}</p>
             )}
-          </div>
+          </RRCard>
 
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => nextStep(2)}
-              className="flex-1 border border-slate-300 text-slate-600 font-bold py-4 rounded-xl">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <RRButton onClick={() => nextStep(2)}
+              variant="secondary"
+              className="flex-1">
               ← Ruta
-            </button>
-            <button onClick={confirmar} disabled={enviando}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">
+            </RRButton>
+            <RRButton onClick={confirmar} disabled={enviando}
+              className="flex-1">
               {enviando
                 ? <><FontAwesomeIcon icon={faSpinner} className="animate-spin" /> Enviando...</>
                 : '✓ Solicitar traslado'
               }
-            </button>
+            </RRButton>
           </div>
         </div>
       )}

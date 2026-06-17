@@ -30,7 +30,7 @@ const USOS_CFDI = [
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const iCls = (err?: string) =>
-  `w-full border ${err ? 'border-red-400 bg-red-50' : 'border-slate-300'} rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`
+  `w-full border ${err ? 'border-red-400 bg-red-50' : 'border-slate-300'} rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFC400]`
 
 function Label({ children, req }: { children: React.ReactNode; req?: boolean }) {
   return (
@@ -95,14 +95,14 @@ function UploadBox({ label, value, onChange, error, accept = 'image/*,.pdf' }: {
 // ─── PANTALLA 1: BIENVENIDA ───────────────────────────────────────────────────
 function StepWelcome({ onRegister, onLogin }: { onRegister: () => void; onLogin: () => void }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center py-12">
+    <div className="min-h-screen bg-[#151515] flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 text-center py-10 sm:py-12">
         <div className="w-24 h-24 bg-white/10 rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
           <span className="text-5xl">🚗</span>
         </div>
         <div className="flex items-center gap-2 mb-6">
-          <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-            <span className="text-white font-black text-xs">RR</span>
+          <div className="w-6 h-6 bg-[#FFC400]/20 rounded-lg flex items-center justify-center">
+            <span className="text-[#FFC400] font-black text-xs">RR</span>
           </div>
           <span className="text-white/60 text-xs font-medium tracking-widest uppercase">Ruum Ruum</span>
         </div>
@@ -123,13 +123,13 @@ function StepWelcome({ onRegister, onLogin }: { onRegister: () => void; onLogin:
           ))}
         </div>
       </div>
-      <div className="px-8 pb-12 space-y-3">
+      <div className="px-5 sm:px-8 pb-8 sm:pb-12 space-y-3">
         <button onClick={onRegister}
-          className="w-full bg-white text-blue-700 font-bold py-4 rounded-2xl text-base shadow-xl hover:bg-white/90 transition-all active:scale-95">
+          className="w-full bg-[#FFC400] text-[#151515] font-bold py-4 rounded-2xl text-base shadow-xl hover:bg-white/90 transition-all active:scale-95">
           Crear mi cuenta
         </button>
         <button onClick={onLogin}
-          className="w-full border-2 border-white/40 text-white font-semibold py-4 rounded-2xl text-base hover:bg-white/10 transition-all active:scale-95">
+          className="w-full border-2 border-[#FFC400]/60 text-[#FFC400] font-semibold py-4 rounded-2xl text-base hover:bg-[#FFC400]/10 transition-all active:scale-95">
           Ya tengo cuenta
         </button>
       </div>
@@ -202,19 +202,19 @@ function StepRegister({ onBack, onNext }: {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="bg-blue-600 px-6 pt-12 pb-6">
-        <button onClick={onBack} className="text-white/70 text-sm mb-4 flex items-center gap-1 hover:text-white">← Regresar</button>
+      <div className="bg-[#151515] px-5 sm:px-6 pt-8 sm:pt-12 pb-6">
+        <button onClick={onBack} className="text-[#F8F8F5]/70 text-sm mb-4 flex items-center gap-1 hover:text-[#FFC400]">← Regresar</button>
         <h2 className="text-2xl font-black text-white">Crear mi cuenta</h2>
         <p className="text-white/60 text-sm mt-1">Completa tus datos para comenzar</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
 
         {/* Datos personales */}
         <div>
           <Sec>👤 Datos personales</Sec>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label req>Nombre(s)</Label>
                 <input type="text" value={form.nombre} placeholder="NOMBRE(S)"
@@ -249,7 +249,7 @@ function StepRegister({ onBack, onNext }: {
             </div>
             <div>
               <Label req>Teléfono</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col min-[380px]:flex-row gap-2">
                 <div className="px-3 py-3 border border-slate-300 rounded-xl text-sm text-slate-600 bg-slate-50 whitespace-nowrap">🇲🇽 +52</div>
                 <input type="tel" value={form.telefono} placeholder="55-0000-0000"
                   onChange={e => set('telefono', fmtTel(e.target.value))} className={`flex-1 ${iCls(errors.telefono)}`} />
@@ -262,23 +262,23 @@ function StepRegister({ onBack, onNext }: {
         {/* Toggle facturación */}
         <button type="button" onClick={() => set('requiereFactura', !form.requiereFactura)}
           className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-colors ${
-            form.requiereFactura ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+            form.requiereFactura ? 'border-[#FFC400] bg-[#FFC400]/5' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
           }`}>
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${form.requiereFactura ? 'bg-blue-100' : 'bg-slate-200'}`}>🧾</div>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${form.requiereFactura ? 'bg-[#FFC400]/20' : 'bg-slate-200'}`}>🧾</div>
             <div className="text-left">
-              <p className={`text-sm font-semibold ${form.requiereFactura ? 'text-blue-700' : 'text-slate-700'}`}>Requiero facturación</p>
+              <p className={`text-sm font-semibold ${form.requiereFactura ? 'text-[#151515] font-bold' : 'text-slate-700'}`}>Requiero facturación</p>
               <p className="text-xs text-slate-400">Activa para capturar tus datos fiscales</p>
             </div>
           </div>
-          <div className={`w-11 h-6 rounded-full transition-colors relative ${form.requiereFactura ? 'bg-blue-500' : 'bg-slate-300'}`}>
+          <div className={`w-11 h-6 rounded-full transition-colors relative ${form.requiereFactura ? 'bg-[#FFC400]' : 'bg-slate-300'}`}>
             <div className={`w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-transform ${form.requiereFactura ? 'translate-x-5' : 'translate-x-0.5'}`} />
           </div>
         </button>
 
         {/* Datos fiscales */}
         {form.requiereFactura && (
-          <div className="border border-blue-100 bg-blue-50/40 rounded-xl p-4 space-y-3">
+          <div className="border border-[#FFC400]/20 bg-[#FFC400]/5 rounded-xl p-4 space-y-3">
             <Sec>🧾 Información fiscal</Sec>
             <div>
               <Label req>Razón social</Label>
@@ -310,7 +310,7 @@ function StepRegister({ onBack, onNext }: {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500 mb-2">Domicilio fiscal</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
                   <Label req>Calle</Label>
                   <input type="text" value={form.fiscalCalle} placeholder="NOMBRE DE LA CALLE"
@@ -381,9 +381,9 @@ function StepRegister({ onBack, onNext }: {
 
       </div>
 
-      <div className="p-6 border-t border-slate-100">
+      <div className="p-5 sm:p-6 border-t border-slate-100">
         <button onClick={() => { if (validate()) onNext(form) }}
-          className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl text-base hover:bg-blue-700 transition-all active:scale-95">
+          className="w-full bg-[#FFC400] text-[#151515] font-bold py-4 rounded-2xl text-base hover:brightness-95 transition-all active:scale-95">
           Continuar →
         </button>
       </div>
@@ -417,13 +417,13 @@ function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: () => v
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="bg-blue-600 px-6 pt-12 pb-6">
-        <button onClick={onBack} className="text-white/70 text-sm mb-4 flex items-center gap-1 hover:text-white">← Regresar</button>
+      <div className="bg-[#151515] px-5 sm:px-6 pt-8 sm:pt-12 pb-6">
+        <button onClick={onBack} className="text-[#F8F8F5]/70 text-sm mb-4 flex items-center gap-1 hover:text-[#FFC400]">← Regresar</button>
         <h2 className="text-2xl font-black text-white">Tus documentos</h2>
         <p className="text-white/60 text-sm mt-1">Los revisaremos en menos de 24 horas</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
 
         {/* Identificación oficial */}
         <div className="space-y-3">
@@ -442,7 +442,7 @@ function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: () => v
             </select>
             <Err msg={errors.ineType} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label req>Número / Folio</Label>
               <input type="text" value={ineNumero} placeholder="NÚMERO DE FOLIO"
@@ -458,7 +458,7 @@ function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: () => v
               <Err msg={errors.ineVigencia} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <UploadBox label="Frente" value={ineFrente}
               onChange={v => { setIneFrente(v); setErrors(er => ({ ...er, ineFrente: '' })) }}
               error={errors.ineFrente} />
@@ -485,9 +485,9 @@ function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: () => v
         )}
       </div>
 
-      <div className="p-6 border-t border-slate-100">
+      <div className="p-5 sm:p-6 border-t border-slate-100">
         <button onClick={() => { if (validate()) onNext() }}
-          className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl text-base hover:bg-blue-700 transition-all active:scale-95">
+          className="w-full bg-[#FFC400] text-[#151515] font-bold py-4 rounded-2xl text-base hover:brightness-95 transition-all active:scale-95">
           Continuar →
         </button>
       </div>
@@ -509,8 +509,8 @@ function StepLegal({ onBack, onAccept, loading }: { onBack: () => void; onAccept
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="bg-blue-600 px-6 pt-12 pb-6">
-        <button onClick={onBack} className="text-white/70 text-sm mb-4 flex items-center gap-1 hover:text-white">← Regresar</button>
+      <div className="bg-[#151515] px-5 sm:px-6 pt-8 sm:pt-12 pb-6">
+        <button onClick={onBack} className="text-[#F8F8F5]/70 text-sm mb-4 flex items-center gap-1 hover:text-[#FFC400]">← Regresar</button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center text-xl">🛡️</div>
           <div>
@@ -520,20 +520,20 @@ function StepLegal({ onBack, onAccept, loading }: { onBack: () => void; onAccept
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
         {items.map(item => (
           <button key={item.key} onClick={() => toggle(item.key)}
             className={`w-full text-left p-4 rounded-2xl border-2 transition-colors ${
-              checks[item.key] ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+              checks[item.key] ? 'border-[#FFC400] bg-[#FFC400]/5' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
             }`}>
             <div className="flex items-start gap-3">
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
-                checks[item.key] ? 'border-blue-500 bg-blue-500' : 'border-slate-300 bg-white'
+                checks[item.key] ? 'border-[#FFC400] bg-[#FFC400]' : 'border-slate-300 bg-white'
               }`}>
                 {checks[item.key] && <span className="text-white text-xs font-bold">✓</span>}
               </div>
               <div>
-                <p className={`text-sm font-bold mb-1 ${checks[item.key] ? 'text-blue-700' : 'text-slate-800'}`}>{item.title}</p>
+                <p className={`text-sm font-bold mb-1 ${checks[item.key] ? 'text-[#151515] font-semibold' : 'text-slate-800'}`}>{item.title}</p>
                 <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
               </div>
             </div>
@@ -542,7 +542,7 @@ function StepLegal({ onBack, onAccept, loading }: { onBack: () => void; onAccept
         {!allChecked && <p className="text-xs text-slate-400 text-center">Acepta todos los documentos para activar tu cuenta</p>}
       </div>
 
-      <div className="p-6 border-t border-slate-100">
+      <div className="p-5 sm:p-6 border-t border-slate-100">
         <button onClick={onAccept} disabled={!allChecked || loading}
           className={`w-full font-bold py-4 rounded-2xl text-base transition-all active:scale-95 ${
             allChecked && !loading
@@ -591,13 +591,13 @@ function StepLogin({ onBack, onAuth }: { onBack: () => void; onAuth: () => void 
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="bg-blue-600 px-6 pt-12 pb-6">
-        <button onClick={onBack} className="text-white/70 text-sm mb-4 flex items-center gap-1 hover:text-white">← Regresar</button>
+      <div className="bg-[#151515] px-5 sm:px-6 pt-8 sm:pt-12 pb-6">
+        <button onClick={onBack} className="text-[#F8F8F5]/70 text-sm mb-4 flex items-center gap-1 hover:text-[#FFC400]">← Regresar</button>
         <h2 className="text-2xl font-black text-white">Iniciar sesión</h2>
         <p className="text-white/60 text-sm mt-1">Bienvenido de nuevo</p>
       </div>
 
-      <div className="flex-1 p-6 space-y-4">
+      <div className="flex-1 p-5 sm:p-6 space-y-4">
         <div>
           <Label req>Correo electrónico</Label>
           <input type="email" value={email} placeholder="correo@ejemplo.com"
@@ -621,13 +621,13 @@ function StepLogin({ onBack, onAuth }: { onBack: () => void; onAuth: () => void 
 
         {forgotSent
           ? <p className="text-xs text-green-600 font-medium">✓ Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.</p>
-          : <button onClick={handleForgot} className="text-sm text-blue-600 font-medium hover:underline">¿Olvidaste tu contraseña?</button>
+          : <button onClick={handleForgot} className="text-sm text-[#151515] font-semibold hover:underline">¿Olvidaste tu contraseña?</button>
         }
       </div>
 
-      <div className="p-6 border-t border-slate-100">
+      <div className="p-5 sm:p-6 border-t border-slate-100">
         <button onClick={handleLogin} disabled={loading}
-          className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl text-base hover:bg-blue-700 disabled:opacity-60 transition-all active:scale-95">
+          className="w-full bg-[#151515] text-[#F8F8F5] font-bold py-4 rounded-2xl text-base hover:bg-[#2a2a2a] disabled:opacity-60 transition-all active:scale-95">
           {loading ? 'Verificando...' : 'Entrar'}
         </button>
       </div>

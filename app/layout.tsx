@@ -18,7 +18,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="flex items-center justify-center min-h-screen p-0 md:p-4">
+      <body className="min-h-screen md:flex md:items-center md:justify-center md:p-4">
         {children}
       </body>
     </html>

@@ -23,23 +23,25 @@ export default function BottomNav() {
   const activeView = NAV_VIEWS.includes(currentView) ? currentView : null
 
   return (
-    <nav className="bg-white border-t border-slate-200 px-6 py-3 flex justify-between items-center flex-shrink-0 z-20">
+    <nav className="bg-white/95 border-t border-rr-gray200 px-2 py-2 sm:px-6 sm:py-3 flex justify-center items-center flex-shrink-0 z-20 shadow-rrFloating backdrop-blur">
+      <div className="grid w-full max-w-[1024px] grid-cols-5 gap-1">
       {navItems.map((item) => {
         const isActive = activeView === item.id
         return (
           <button
             key={item.id}
             onClick={() => showView(item.id)}
-            className={`flex flex-col items-center gap-1 transition-all w-16 ${isActive ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}
+            className={`flex min-w-0 flex-col items-center gap-1 rounded-rrMd px-1 py-1.5 transition-all ${isActive ? 'text-rr-primary bg-rr-primaryLight' : 'text-rr-gray500 hover:text-rr-black hover:bg-rr-gray100'}`}
           >
             <FontAwesomeIcon
               icon={item.icon}
               className={`text-xl transition-transform duration-200 ${isActive ? '-translate-y-0.5' : ''}`}
             />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            <span className="max-w-full truncate text-[10px] font-medium">{item.label}</span>
           </button>
         )
       })}
+      </div>
     </nav>
   )
 }

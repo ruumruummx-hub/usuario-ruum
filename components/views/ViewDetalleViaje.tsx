@@ -60,7 +60,7 @@ export default function ViewDetalleViaje() {
   return (
     <div className="fade-in pb-24">
       {/* Header — mapa simulado */}
-      <div className="bg-slate-200 h-44 relative flex items-center justify-center">
+      <div className="bg-slate-200 h-44 md:h-56 relative flex items-center justify-center">
         <div
           className="absolute inset-0 opacity-40"
           style={{
@@ -76,7 +76,7 @@ export default function ViewDetalleViaje() {
         </svg>
         <button
           onClick={() => showView('view-mis-viajes')}
-          className="absolute top-12 left-5 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 z-10"
+          className="absolute top-6 left-5 md:left-8 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 z-10"
         >
           <FontAwesomeIcon icon={faArrowLeft} />
         </button>
@@ -94,10 +94,10 @@ export default function ViewDetalleViaje() {
         )}
       </div>
 
-      <div className="p-5 -mt-6 relative z-10">
+      <div className="p-5 md:px-8 -mt-6 relative z-10">
         {/* Tarjeta de estatus */}
         <div className="bg-white rounded-xl shadow-lg border border-slate-100 p-4 mb-5">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-2">
             <span className={`text-xs font-bold px-2 py-1 rounded-full ${statusColor[viaje.status] ?? 'bg-slate-100 text-slate-600'}`}>
               {viaje.status.toUpperCase()}
             </span>
@@ -141,9 +141,9 @@ export default function ViewDetalleViaje() {
                 className="w-14 h-14 rounded-full border-2 border-white shadow-sm"
                 alt={`${conductor.nombre} ${conductor.apellido}`}
               />
-              <div className="flex-1">
+            <div className="flex-1 min-w-0">
                 <p className="text-base font-bold text-slate-800">{conductor.nombre} {conductor.apellido}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-wrap items-center gap-2 mt-1">
                   <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">CERTIFICADO</span>
                   <span className="text-xs text-slate-500">
                     <FontAwesomeIcon icon={faStar} className="text-amber-400" /> {conductor.calificacion}

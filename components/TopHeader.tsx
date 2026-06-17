@@ -1,23 +1,28 @@
 'use client'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell } from '@fortawesome/free-solid-svg-icons'
+import { faBell, faUser } from '@fortawesome/free-solid-svg-icons'
 
 export default function TopHeader() {
   return (
-    <header className="bg-slate-900 text-white px-5 pt-12 pb-4 flex-shrink-0 sticky top-0 z-20">
-      <div className="flex justify-between items-center">
+    <header className="bg-rr-secondary text-white px-5 pt-8 pb-5 sm:px-8 md:pt-6 flex-shrink-0 sticky top-0 z-20 shadow-rrFloating">
+      <div className="mx-auto flex max-w-[1024px] justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm">R</div>
+          <div className="w-10 h-10 bg-white rounded-rrMd text-rr-primary flex items-center justify-center font-black text-sm">RR</div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Ruum Ruum</h1>
-            <p className="text-[10px] text-slate-400 tracking-wider">BY MOVILIAX</p>
+            <h1 className="font-black text-lg leading-tight tracking-tight">Ruum Ruum</h1>
+            <p className="text-[10px] text-white/60 tracking-wider">BY MOVILIAX</p>
           </div>
         </div>
-        <button className="relative p-2 text-slate-300 hover:text-white">
-          <FontAwesomeIcon icon={faBell} className="text-lg" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-900" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="relative h-10 w-10 rounded-full bg-white/10 text-white/80 hover:bg-white/15 hover:text-white">
+            <FontAwesomeIcon icon={faBell} className="text-base" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rr-warning rounded-full border border-rr-secondary" />
+          </button>
+          <button className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/15 hover:text-white">
+            <FontAwesomeIcon icon={faUser} className="text-base" />
+          </button>
+        </div>
       </div>
     </header>
   )

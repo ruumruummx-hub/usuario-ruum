@@ -95,7 +95,7 @@ export default function ViewMisViajes() {
 
       {/* Lista */}
       <div className="space-y-4">
-        {filtrados.map((viaje, i) => (
+        {filtrados.map((viaje) => (
           <div
             key={viaje.id}
             className={`bg-white border rounded-xl p-4 shadow-sm cursor-pointer ${
@@ -105,7 +105,7 @@ export default function ViewMisViajes() {
             }`}
             onClick={() => { setViajeSeleccionado(viaje); showView('view-detalle-viaje') }}
           >
-            <div className="flex justify-between items-start mb-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start mb-3">
               <span className={`text-xs font-bold px-2 py-1 rounded-full ${statusColor[viaje.status] ?? 'bg-slate-100 text-slate-600'}`}>
                 {viaje.status.toUpperCase()}
               </span>
@@ -126,22 +126,22 @@ export default function ViewMisViajes() {
                 </p>
               </div>
             </div>
-            <div className="border-t border-slate-100 pt-3 flex justify-between items-center">
+            <div className="border-t border-slate-100 pt-3 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
               {viaje.conductores ? (
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`https://ui-avatars.com/api/?name=${viaje.conductores.nombre}&background=0D8ABC&color=fff`}
                     className="w-6 h-6 rounded-full" alt="Conductor"
                   />
-                  <span className="text-xs font-medium text-slate-600">
+                  <span className="truncate text-xs font-medium text-slate-600">
                     {viaje.conductores.nombre} {viaje.conductores.apellido}
                   </span>
                 </div>
               ) : (
                 <span className="text-xs text-amber-600 font-medium">⏳ Asignando conductor...</span>
               )}
-              <span className="text-xs font-bold text-blue-600 flex items-center gap-1">
+              <span className="text-xs font-bold text-blue-600 flex items-center gap-1 sm:justify-end">
                 Ver detalle <FontAwesomeIcon icon={faChevronRight} className="text-[10px]" />
               </span>
             </div>

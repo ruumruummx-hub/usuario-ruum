@@ -3,6 +3,7 @@
 import { useApp } from '@/context/AppContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlusCircle, faHistory, faCamera, faShieldAlt, faChevronRight, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { RRBadge, RRButton, RRCard } from '@/components/rr'
 
 export default function ViewInicio() {
   const { showView, misViajes, cargandoViajes, usuario, setViajeSeleccionado } = useApp()
@@ -16,68 +17,68 @@ export default function ViewInicio() {
     <div className="fade-in p-5 pb-24">
       {/* Saludo */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">
+        <h2 className="text-2xl font-black text-rr-black">
           {usuario ? `Hola, ${usuario.nombre}.` : 'Mueve tu auto sin soltar el control.'}
         </h2>
-        <p className="text-sm text-slate-500 mt-1">Tecnología para mover vehículos con confianza.</p>
+        <p className="text-sm text-rr-gray500 mt-1">Tecnología para mover vehículos con confianza.</p>
       </div>
 
       {/* Botón Principal */}
-      <button
+      <RRButton
         onClick={() => showView('view-solicitar')}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-3 mb-6"
+        fullWidth
+        className="mb-6"
       >
         <FontAwesomeIcon icon={faPlusCircle} className="text-xl" />
         Solicitar traslado
-      </button>
+      </RRButton>
 
       {/* Viaje Activo */}
       {cargandoViajes ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 flex items-center justify-center gap-2 text-slate-400">
+        <RRCard className="mb-6 flex items-center justify-center gap-2 p-6 text-rr-gray500">
           <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
           <span className="text-sm">Cargando tus viajes...</span>
-        </div>
+        </RRCard>
       ) : viajeActivo ? (
-        <div
-          className="bg-white border border-blue-100 rounded-xl p-4 shadow-sm mb-6 cursor-pointer"
+        <RRCard
+          className="mb-6 cursor-pointer border-rr-primaryLight p-4"
           onClick={() => { setViajeSeleccionado(viajeActivo); showView('view-detalle-viaje') }}
         >
           <div className="flex justify-between items-start mb-3">
-            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse" />
+            <RRBadge variant="process" pulse>
               {viajeActivo.status.toUpperCase()}
-            </span>
-            <span className="text-xs text-slate-400">{viajeActivo.folio}</span>
+            </RRBadge>
+            <span className="text-xs text-rr-gray500">{viajeActivo.folio}</span>
           </div>
           <div className="flex gap-3 mb-3">
             <div className="flex flex-col items-center pt-1">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-              <div className="w-0.5 h-6 bg-slate-200 my-1" />
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-rr-success" />
+              <div className="w-0.5 h-6 bg-rr-gray200 my-1" />
+              <div className="w-2.5 h-2.5 rounded-full bg-rr-warning" />
             </div>
-            <div className="flex-1">
-              <p className="text-xs text-slate-500">Origen</p>
-              <p className="text-sm font-semibold text-slate-800 leading-tight">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-rr-gray500">Origen</p>
+              <p className="text-sm font-bold text-rr-black leading-tight">
                 {[viajeActivo.origen_calle, viajeActivo.origen_colonia].filter(Boolean).join(', ')}
               </p>
-              <p className="text-xs text-slate-500 mt-2">Destino</p>
-              <p className="text-sm font-semibold text-slate-800 leading-tight">
+              <p className="text-xs text-rr-gray500 mt-2">Destino</p>
+              <p className="text-sm font-bold text-rr-black leading-tight">
                 {[viajeActivo.destino_calle, viajeActivo.destino_colonia].filter(Boolean).join(', ')}
               </p>
             </div>
           </div>
           {viajeActivo.conductores && (
-            <div className="border-t border-slate-100 pt-3 flex items-center gap-3">
+            <div className="border-t border-rr-gray200 pt-3 flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`https://ui-avatars.com/api/?name=${viajeActivo.conductores.nombre}+${viajeActivo.conductores.apellido}&background=0D8ABC&color=fff`}
                 className="w-8 h-8 rounded-full" alt="Conductor"
               />
               <div className="flex-1">
-                <p className="text-xs text-slate-500">Tu conductor</p>
-                <p className="text-sm font-semibold text-slate-800">
+                <p className="text-xs text-rr-gray500">Tu conductor</p>
+                <p className="text-sm font-semibold text-rr-black break-words">
                   {viajeActivo.conductores.nombre} {viajeActivo.conductores.apellido}
-                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ml-1">
+                  <span className="text-[10px] bg-rr-successLight text-rr-success px-1.5 py-0.5 rounded ml-1">
                     ★ {viajeActivo.conductores.calificacion}
                   </span>
                 </p>
@@ -86,52 +87,52 @@ export default function ViewInicio() {
             </div>
           )}
           {!viajeActivo.conductores && (
-            <div className="border-t border-slate-100 pt-3">
-              <p className="text-xs text-amber-600 font-medium">
+            <div className="border-t border-rr-gray200 pt-3">
+              <p className="text-xs text-rr-warning font-medium">
                 ⏳ Asignando conductor certificado...
               </p>
             </div>
           )}
-        </div>
+        </RRCard>
       ) : misViajes.length > 0 ? null : (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm text-slate-500">Aún no tienes viajes activos.</p>
-          <p className="text-xs text-slate-400 mt-1">¡Solicita tu primer traslado!</p>
-        </div>
+        <RRCard elevated={false} className="mb-6 bg-rr-gray100 p-4 text-center">
+          <p className="text-sm text-rr-gray500">Aún no tienes viajes activos.</p>
+          <p className="text-xs text-rr-gray500 mt-1">¡Solicita tu primer traslado!</p>
+        </RRCard>
       )}
 
       {/* Accesos Rápidos */}
-      <h3 className="text-sm font-bold text-slate-700 mb-3">Accesos rápidos</h3>
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <h3 className="text-sm font-bold text-rr-gray700 mb-3">Accesos rápidos</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <button
           onClick={() => showView('view-mis-viajes')}
-          className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col items-center gap-2 hover:bg-slate-50 transition-colors"
+          className="bg-white border border-rr-gray200 p-4 rounded-rrLg shadow-rrCard flex flex-col items-center gap-2 hover:bg-rr-primaryLight transition-colors"
         >
-          <div className="w-10 h-10 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-rr-primaryLight text-rr-primary rounded-rrSm flex items-center justify-center">
             <FontAwesomeIcon icon={faHistory} />
           </div>
-          <span className="text-sm font-medium text-slate-700">Mis viajes</span>
+          <span className="text-sm font-medium text-rr-gray700">Mis viajes</span>
           {misViajes.length > 0 && (
-            <span className="text-xs text-blue-600 font-medium">{misViajes.length} registrado{misViajes.length > 1 ? 's' : ''}</span>
+            <span className="text-xs text-rr-primary font-medium">{misViajes.length} registrado{misViajes.length > 1 ? 's' : ''}</span>
           )}
         </button>
         <button
           onClick={() => showView('view-evidencia')}
-          className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col items-center gap-2 hover:bg-slate-50 transition-colors"
+          className="bg-white border border-rr-gray200 p-4 rounded-rrLg shadow-rrCard flex flex-col items-center gap-2 hover:bg-rr-primaryLight transition-colors"
         >
-          <div className="w-10 h-10 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-rr-primaryLight text-rr-primary rounded-rrSm flex items-center justify-center">
             <FontAwesomeIcon icon={faCamera} />
           </div>
-          <span className="text-sm font-medium text-slate-700">Ver evidencias</span>
+          <span className="text-sm font-medium text-rr-gray700">Ver evidencias</span>
         </button>
       </div>
 
       {/* Mensaje de Confianza */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
-        <FontAwesomeIcon icon={faShieldAlt} className="text-blue-600 mt-1" />
+      <div className="bg-rr-primaryLight border border-rr-gray200 rounded-rrLg p-4 flex gap-3 shadow-rrCard">
+        <FontAwesomeIcon icon={faShieldAlt} className="text-rr-primary mt-1" />
         <div>
-          <p className="text-sm font-semibold text-blue-900">Tu vehículo está protegido</p>
-          <p className="text-xs text-blue-700 mt-1">
+          <p className="text-sm font-semibold text-rr-secondary">Tu vehículo está protegido</p>
+          <p className="text-xs text-rr-gray700 mt-1">
             Todos nuestros conductores pasan por un riguroso proceso de certificación y cada etapa queda documentada.
           </p>
         </div>

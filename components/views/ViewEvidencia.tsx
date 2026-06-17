@@ -36,7 +36,7 @@ export default function ViewEvidencia() {
         <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
           <span className="w-2 h-2 bg-green-500 rounded-full" /> Evidencia Inicial (11:15 AM)
         </h3>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           {photos.map((photo, i) => (
             <div
               key={i}
