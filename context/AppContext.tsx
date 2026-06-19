@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { ViewId, StepId } from '@/lib/types'
+import type { User } from '@supabase/supabase-js'
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
 export interface ViajeUsuario {
@@ -26,6 +27,27 @@ export interface UsuarioPerfil {
   apellido: string
   email: string | null
   telefono: string | null
+}
+
+type UsuarioPerfilInsert = {
+  nombre: string
+  apellido: string
+  curp: string | null
+  email: string
+  telefono: string | null
+  tipo: string
+  estatus: string
+  calle: string | null
+  numero: string | null
+  colonia: string | null
+  municipio: string | null
+  estado_geo: string | null
+  codigo_postal: string | null
+  razon_social: string | null
+  rfc: string | null
+  regimen_fiscal: string | null
+  cfdi: string | null
+  domicilio_fiscal: string | null
 }
 
 interface AppContextType {
@@ -89,12 +111,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null
   }
 
+  const crearPerfilDesdeAuth = async (user: User): Promise<UsuarioPerfil | null> => {
+    const metadata = user.user_metadata as Record<string, unknown>
+    const perfil = metadata.usuario_perfil as Partial<UsuarioPerfilInsert> | undefined
+    if (!perfil?.nombre || !perfil?.apellido) return null
+
+    const payload: UsuarioPerfilInsert & { auth_id: string } = {
+      auth_id: user.id,
+      nombre: String(perfil.nombre),
+      apellido: String(perfil.apellido),
+      curp: perfil.curp ? String(perfil.curp) : null,
+      email: String(perfil.email ?? user.email ?? ''),
+      telefono: perfil.telefono ? String(perfil.telefono) : null,
+      tipo: String(perfil.tipo ?? 'Personal'),
+      estatus: String(perfil.estatus ?? 'Activo'),
+      calle: perfil.calle ? String(perfil.calle) : null,
+      numero: perfil.numero ? String(perfil.numero) : null,
+      colonia: perfil.colonia ? String(perfil.colonia) : null,
+      municipio: perfil.municipio ? String(perfil.municipio) : null,
+      estado_geo: perfil.estado_geo ? String(perfil.estado_geo) : null,
+      codigo_postal: perfil.codigo_postal ? String(perfil.codigo_postal) : null,
+      razon_social: perfil.razon_social ? String(perfil.razon_social) : null,
+      rfc: perfil.rfc ? String(perfil.rfc) : null,
+      regimen_fiscal: perfil.regimen_fiscal ? String(perfil.regimen_fiscal) : null,
+      cfdi: perfil.cfdi ? String(perfil.cfdi) : null,
+      domicilio_fiscal: perfil.domicilio_fiscal ? String(perfil.domicilio_fiscal) : null,
+    }
+
+    if (!payload.email) return null
+
+    const { error } = await supabase.from('usuarios').insert(payload)
+    if (error) {
+      console.error('Error creando perfil de usuario:', error)
+      return null
+    }
+
+    return cargarPerfil(user.id)
+  }
+
   // ── Verificar sesión al montar ─────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setAutenticado(true)
-        await cargarPerfil(session.user.id)
+        const perfil = await cargarPerfil(session.user.id)
+        if (!perfil) await crearPerfilDesdeAuth(session.user)
       }
       setAuthReady(true)
     })
@@ -102,7 +163,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setAutenticado(true)
-        await cargarPerfil(session.user.id)
+        const perfil = await cargarPerfil(session.user.id)
+        if (!perfil) await crearPerfilDesdeAuth(session.user)
       } else {
         setAutenticado(false)
         setUsuario(null)

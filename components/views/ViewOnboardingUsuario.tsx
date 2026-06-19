@@ -44,6 +44,17 @@ function Err({ msg }: { msg?: string }) {
   return msg ? <p className="text-xs text-red-500 mt-0.5">{msg}</p> : null
 }
 
+function EyeIcon({ open }: { open: boolean }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      {open
+        ? <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></>
+        : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
+      }
+    </svg>
+  )
+}
+
 function Sec({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 mb-3">{children}</p>
 }
@@ -140,6 +151,7 @@ function StepWelcome({ onRegister, onLogin }: { onRegister: () => void; onLogin:
 // ─── PANTALLA 2: REGISTRO ─────────────────────────────────────────────────────
 interface RegData {
   nombre: string; apellido: string; curp: string; email: string; telefono: string; tipo: string
+  calle: string; numero: string; colonia: string; municipio: string; estadoGeo: string; codigoPostal: string
   requiereFactura: boolean; razonSocial: string; rfc: string; regimenFiscal: string; cfdi: string
   fiscalCalle: string; fiscalNumero: string; fiscalColonia: string; fiscalMunicipio: string; fiscalEstado: string; fiscalCp: string
   password: string; confirmar: string
@@ -151,6 +163,7 @@ function StepRegister({ onBack, onNext }: {
 }) {
   const [form, setForm] = useState<RegData>({
     nombre: '', apellido: '', curp: '', email: '', telefono: '', tipo: '',
+    calle: '', numero: '', colonia: '', municipio: '', estadoGeo: '', codigoPostal: '',
     requiereFactura: false,
     razonSocial: '', rfc: '', regimenFiscal: '', cfdi: '',
     fiscalCalle: '', fiscalNumero: '', fiscalColonia: '', fiscalMunicipio: '', fiscalEstado: '', fiscalCp: '',
@@ -190,15 +203,6 @@ function StepRegister({ onBack, onNext }: {
     setErrors(e)
     return Object.keys(e).length === 0
   }
-
-  const EyeIcon = ({ open }: { open: boolean }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      {open
-        ? <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></>
-        : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
-      }
-    </svg>
-  )
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -255,6 +259,43 @@ function StepRegister({ onBack, onNext }: {
                   onChange={e => set('telefono', fmtTel(e.target.value))} className={`flex-1 ${iCls(errors.telefono)}`} />
               </div>
               <Err msg={errors.telefono} />
+            </div>
+          </div>
+        </div>
+
+        {/* Domicilio general */}
+        <div>
+          <Sec>🏠 Domicilio</Sec>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Calle</Label>
+              <input type="text" value={form.calle} placeholder="NOMBRE DE LA CALLE"
+                onChange={e => set('calle', e.target.value.toUpperCase())} className={iCls()} />
+            </div>
+            <div>
+              <Label>Número</Label>
+              <input type="text" value={form.numero} placeholder="EXT / INT"
+                onChange={e => set('numero', e.target.value.toUpperCase())} className={iCls()} />
+            </div>
+            <div>
+              <Label>Colonia</Label>
+              <input type="text" value={form.colonia} placeholder="COLONIA"
+                onChange={e => set('colonia', e.target.value.toUpperCase())} className={iCls()} />
+            </div>
+            <div>
+              <Label>Código Postal</Label>
+              <input type="text" value={form.codigoPostal} placeholder="00000" maxLength={5}
+                onChange={e => set('codigoPostal', e.target.value.replace(/\D/g,'').slice(0,5))} className={iCls()} />
+            </div>
+            <div>
+              <Label>Municipio / Alcaldía</Label>
+              <input type="text" value={form.municipio} placeholder="MUNICIPIO"
+                onChange={e => set('municipio', e.target.value.toUpperCase())} className={iCls()} />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <input type="text" value={form.estadoGeo} placeholder="ESTADO"
+                onChange={e => set('estadoGeo', e.target.value.toUpperCase())} className={iCls()} />
             </div>
           </div>
         </div>
@@ -580,15 +621,6 @@ function StepLogin({ onBack, onAuth }: { onBack: () => void; onAuth: () => void 
     setForgotSent(true)
   }
 
-  const EyeIcon = ({ open }: { open: boolean }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      {open
-        ? <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></>
-        : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
-      }
-    </svg>
-  )
-
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="bg-[#151515] px-5 sm:px-6 pt-8 sm:pt-12 pb-6">
@@ -649,39 +681,52 @@ export default function ViewOnboardingUsuario({ onAuth }: Props) {
     if (!regData) return
     setLegalLoading(true)
     try {
-      // 1. Crear usuario en Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: regData.email,
-        password: regData.password,
-      })
-      if (authError) throw authError
-      const uid = authData.user?.id
-      if (!uid) throw new Error('No se pudo crear el usuario')
-
-      // 2. Insertar en tabla usuarios
       const domicilioFiscal = regData.requiereFactura
         ? [regData.fiscalCalle, regData.fiscalNumero, regData.fiscalColonia, regData.fiscalMunicipio, regData.fiscalEstado, regData.fiscalCp]
             .filter(Boolean).join(', ').toUpperCase()
         : null
 
-      const { error: dbError } = await supabase.from('usuarios').insert({
-        auth_id:          uid,
-        nombre:           regData.nombre,
-        apellido:         regData.apellido,
+      const perfilUsuario = {
+        nombre:           regData.nombre.toUpperCase(),
+        apellido:         regData.apellido.toUpperCase(),
         curp:             regData.curp?.toUpperCase() || null,
         email:            regData.email.toLowerCase(),
         telefono:         regData.telefono,
         tipo:             regData.tipo,
         estatus:          'Activo',
+        calle:            regData.calle.toUpperCase() || null,
+        numero:           regData.numero.toUpperCase() || null,
+        colonia:          regData.colonia.toUpperCase() || null,
+        municipio:        regData.municipio.toUpperCase() || null,
+        estado_geo:       regData.estadoGeo.toUpperCase() || null,
+        codigo_postal:    regData.codigoPostal || null,
         razon_social:     regData.requiereFactura ? regData.razonSocial.toUpperCase() : null,
         rfc:              regData.requiereFactura ? regData.rfc.toUpperCase() : null,
         regimen_fiscal:   regData.requiereFactura ? regData.regimenFiscal : null,
         cfdi:             regData.requiereFactura ? regData.cfdi : null,
         domicilio_fiscal: domicilioFiscal,
-      })
-      if (dbError) throw dbError
+      }
 
-      // 3. Guardar flag de onboarding completado
+      const registro = await fetch('/api/registro-usuario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: regData.password,
+          perfilUsuario,
+        }),
+      })
+
+      if (!registro.ok) {
+        const data = await registro.json().catch(() => null) as { error?: string } | null
+        throw new Error(data?.error ?? 'No se pudo crear la cuenta.')
+      }
+
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: regData.email,
+        password: regData.password,
+      })
+      if (loginError) throw loginError
+
       localStorage.setItem('ruum_usuario_onboarding', '1')
       onAuth()
     } catch (e) {
