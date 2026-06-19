@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 
 type Phase = 'phone' | 'otp' | 'name'
 
-const inputCls = 'w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+const inputCls = 'w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rr-primary'
 const labelCls = 'block text-xs font-medium text-slate-500 mb-1'
 
 interface Props {
@@ -104,8 +104,8 @@ export default function ViewLogin({ onAuth }: Props) {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-200">
-          <span className="text-white font-black text-2xl">RR</span>
+        <div className="w-16 h-16 bg-rr-primary rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-yellow-200">
+          <span className="text-rr-secondary font-black text-2xl">RR</span>
         </div>
         <h1 className="text-2xl font-black text-slate-900">Ruum Ruum</h1>
         <p className="text-sm text-slate-500 mt-1">Mueve tu auto con confianza</p>
@@ -142,14 +142,14 @@ export default function ViewLogin({ onAuth }: Props) {
           <button
             onClick={enviarOTP}
             disabled={loading || phone.replace(/\D/g,'').length < 10}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all"
+            className="w-full bg-rr-primary hover:bg-rr-primaryHover disabled:opacity-50 text-rr-secondary font-bold py-4 rounded-xl transition-all"
           >
             {loading ? 'Enviando...' : 'Enviar código →'}
           </button>
 
           <p className="text-xs text-center text-slate-400">
             Al continuar aceptas nuestros{' '}
-            <span className="text-blue-500">Términos de servicio</span>
+            <span className="text-rr-trace">Términos de servicio</span>
           </p>
         </div>
       )}
@@ -183,7 +183,7 @@ export default function ViewLogin({ onAuth }: Props) {
           <button
             onClick={verificarOTP}
             disabled={loading || otp.length < 6}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all"
+            className="w-full bg-rr-primary hover:bg-rr-primaryHover disabled:opacity-50 text-rr-secondary font-bold py-4 rounded-xl transition-all"
           >
             {loading ? 'Verificando...' : 'Verificar código →'}
           </button>
@@ -198,7 +198,7 @@ export default function ViewLogin({ onAuth }: Props) {
           <button
             onClick={enviarOTP}
             disabled={loading}
-            className="w-full text-blue-600 text-sm font-medium py-2"
+            className="w-full text-rr-trace text-sm font-medium py-2"
           >
             Reenviar código
           </button>
@@ -240,7 +240,7 @@ export default function ViewLogin({ onAuth }: Props) {
           <button
             onClick={completarRegistro}
             disabled={loading || !nombre.trim() || !apellido.trim()}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all"
+            className="w-full bg-rr-primary hover:bg-rr-primaryHover disabled:opacity-50 text-rr-secondary font-bold py-4 rounded-xl transition-all"
           >
             {loading ? 'Guardando...' : 'Crear mi cuenta →'}
           </button>

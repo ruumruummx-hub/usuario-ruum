@@ -12,7 +12,7 @@ function StepIndicator({ step, currentStep }: { step: number; currentStep: numbe
   return (
     <div className="flex flex-col items-center gap-1">
       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-        active ? 'bg-rr-primary text-white' : 'bg-rr-gray200 text-rr-gray500'
+        active ? 'bg-rr-primary text-rr-secondary' : 'bg-rr-gray200 text-rr-gray500'
       }`}>
         {step}
       </div>

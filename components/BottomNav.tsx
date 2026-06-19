@@ -31,7 +31,7 @@ export default function BottomNav() {
           <button
             key={item.id}
             onClick={() => showView(item.id)}
-            className={`flex min-w-0 flex-col items-center gap-1 rounded-rrMd px-1 py-1.5 transition-all ${isActive ? 'text-rr-primary bg-rr-primaryLight' : 'text-rr-gray500 hover:text-rr-black hover:bg-rr-gray100'}`}
+            className={`flex min-w-0 flex-col items-center gap-1 rounded-rrMd px-1 py-1.5 transition-all ${isActive ? 'text-rr-secondary bg-rr-primaryLight' : 'text-rr-gray500 hover:text-rr-black hover:bg-rr-gray100'}`}
           >
             <FontAwesomeIcon
               icon={item.icon}

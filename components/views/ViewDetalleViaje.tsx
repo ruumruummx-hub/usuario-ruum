@@ -189,7 +189,7 @@ export default function ViewDetalleViaje() {
                     <div
                       className={`w-4 h-4 rounded-full border-2 border-white shadow-sm z-10 mt-0.5 shrink-0 ${
                         done && !active ? 'bg-green-500'
-                        : active ? 'bg-blue-600 ring-4 ring-blue-100 animate-pulse'
+                        : active ? 'bg-rr-primary ring-4 ring-rr-primaryLight animate-pulse'
                         : 'bg-slate-300'
                       }`}
                     />

@@ -85,7 +85,7 @@ export default function ViewMisViajes() {
           </p>
           <button
             onClick={() => showView('view-solicitar')}
-            className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl flex items-center gap-2 mx-auto"
+            className="bg-rr-primary text-rr-secondary text-sm font-medium px-4 py-2 rounded-xl flex items-center gap-2 mx-auto"
           >
             <FontAwesomeIcon icon={faPlus} />
             Solicitar traslado

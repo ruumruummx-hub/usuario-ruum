@@ -33,8 +33,8 @@ export default function MobileApp() {
   if (!authReady) {
     return (
       <div className="app-shell flex flex-col items-center justify-center bg-white">
-        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 animate-pulse">
-          <span className="text-white font-black text-xl">RR</span>
+        <div className="w-14 h-14 bg-rr-primary rounded-2xl flex items-center justify-center mb-4 animate-pulse">
+          <span className="text-rr-secondary font-black text-xl">RR</span>
         </div>
         <p className="text-sm text-slate-400">Cargando...</p>
       </div>
