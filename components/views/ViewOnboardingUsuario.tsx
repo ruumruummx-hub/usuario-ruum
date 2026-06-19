@@ -617,7 +617,9 @@ function StepLogin({ onBack, onAuth }: { onBack: () => void; onAuth: () => void 
 
   const handleForgot = async () => {
     if (!email) { setError('Ingresa tu correo primero'); return }
-    await supabase.auth.resetPasswordForEmail(email)
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/recuperar-password`,
+    })
     setForgotSent(true)
   }
 
