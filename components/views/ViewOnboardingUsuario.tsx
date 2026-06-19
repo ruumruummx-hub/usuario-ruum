@@ -435,7 +435,16 @@ function StepRegister({ onBack, onNext }: {
 // ─── PANTALLA 3: DOCUMENTOS ───────────────────────────────────────────────────
 type TipoIne = 'INE / IFE' | 'Pasaporte' | 'Cédula Profesional' | ''
 
-function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+interface DocsData {
+  ineTipo: TipoIne
+  ineNumero: string
+  ineVigencia: string
+  ineFrente: DocFile
+  ineReverso: DocFile
+  domicilio: DocFile
+}
+
+function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: (data: DocsData) => void }) {
   const [ineType, setIneType] = useState<TipoIne>('')
   const [ineNumero, setIneNumero] = useState('')
   const [ineVigencia, setIneVigencia] = useState('')
@@ -527,7 +536,7 @@ function StepDocuments({ onBack, onNext }: { onBack: () => void; onNext: () => v
       </div>
 
       <div className="p-5 sm:p-6 border-t border-slate-100">
-        <button onClick={() => { if (validate()) onNext() }}
+        <button onClick={() => { if (validate()) onNext({ ineTipo: ineType, ineNumero, ineVigencia, ineFrente, ineReverso, domicilio }) }}
           className="w-full bg-[#FFC400] text-[#151515] font-bold py-4 rounded-2xl text-base hover:brightness-95 transition-all active:scale-95">
           Continuar →
         </button>
@@ -677,6 +686,7 @@ interface Props {
 export default function ViewOnboardingUsuario({ onAuth }: Props) {
   const [step, setStep] = useState<Step>('welcome')
   const [regData, setRegData] = useState<RegData | null>(null)
+  const [docsData, setDocsData] = useState<DocsData | null>(null)
   const [legalLoading, setLegalLoading] = useState(false)
 
   const handleAcceptLegal = async () => {
@@ -709,13 +719,21 @@ export default function ViewOnboardingUsuario({ onAuth }: Props) {
         domicilio_fiscal: domicilioFiscal,
       }
 
+      const formData = new FormData()
+      formData.append('password', regData.password)
+      formData.append('perfilUsuario', JSON.stringify(perfilUsuario))
+      if (docsData) {
+        formData.append('ineTipo', docsData.ineTipo)
+        formData.append('ineNumero', docsData.ineNumero)
+        formData.append('ineVigencia', docsData.ineVigencia)
+        if (docsData.ineFrente) formData.append('ineFrente', docsData.ineFrente.file)
+        if (docsData.ineReverso) formData.append('ineReverso', docsData.ineReverso.file)
+        if (docsData.domicilio) formData.append('domicilio', docsData.domicilio.file)
+      }
+
       const registro = await fetch('/api/registro-usuario', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password: regData.password,
-          perfilUsuario,
-        }),
+        body: formData,
       })
 
       if (!registro.ok) {
@@ -745,7 +763,7 @@ export default function ViewOnboardingUsuario({ onAuth }: Props) {
     case 'register':
       return <StepRegister onBack={() => setStep('welcome')} onNext={data => { setRegData(data); setStep('documents') }} />
     case 'documents':
-      return <StepDocuments onBack={() => setStep('register')} onNext={() => setStep('legal')} />
+      return <StepDocuments onBack={() => setStep('register')} onNext={data => { setDocsData(data); setStep('legal') }} />
     case 'legal':
       return <StepLegal onBack={() => setStep('documents')} onAccept={handleAcceptLegal} loading={legalLoading} />
     case 'login':
