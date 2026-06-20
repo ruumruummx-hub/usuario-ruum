@@ -198,7 +198,7 @@ export default function ViewDetalleViaje() {
         )}
 
         {/* Evidencia fotográfica */}
-        {currentIdx >= STATUS_ORDER.indexOf('Evidencia inicial pendiente') && (
+        {(Boolean(viaje.evidencias?.length) || currentIdx >= STATUS_ORDER.indexOf('Evidencia inicial pendiente')) && (
           <button onClick={() => showView('view-evidencia')}
             className="w-full bg-white border border-slate-200 rounded-xl p-4 mb-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
             <div className="text-left">

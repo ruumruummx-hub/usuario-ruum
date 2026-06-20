@@ -22,6 +22,7 @@ export interface ViajeUsuario {
   destino_calle: string | null
   destino_colonia: string | null
   tarifa_cliente: number
+  evidencias?: { id: string }[] | null
   conductores: { nombre: string; apellido: string; calificacion: number } | null
   vehiculos: { marca: string; modelo: string; placas: string } | null
 }

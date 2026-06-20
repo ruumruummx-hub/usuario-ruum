@@ -113,7 +113,8 @@ export async function getMisViajes(usuarioId: string) {
       destino_calle, destino_colonia,
       tarifa_cliente, created_at,
       conductores(nombre, apellido, calificacion, foto_url),
-      vehiculos(marca, modelo, placas)
+      vehiculos(marca, modelo, placas),
+      evidencias(id)
     `)
     .eq('usuario_id', usuarioId)
     .order('created_at', { ascending: false })
@@ -252,10 +253,8 @@ export function suscribirMiViaje(viajeId: string, callback: (viaje: any) => void
 
 // ── EVIDENCIA ───────────────────────────────────────────────
 
-// Una fila por viaje (no por conductor — desde la perspectiva del usuario
-// no importa si hubo reasignación, solo le interesa el viaje). Si el
-// viaje fue reasignado y hay más de una fila de evidencia, se toma la
-// más reciente.
+// La evidencia puede estar repartida entre conductores después de una
+// reasignación. Para el usuario se consolida por etapa sin reatribuir filas.
 export async function getEvidenciaViaje(viajeId: string) {
   const { data, error } = await supabase
     .from('evidencias')
@@ -267,11 +266,22 @@ export async function getEvidenciaViaje(viajeId: string) {
     `)
     .eq('viaje_id', viajeId)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
   if (error) throw error
-  return data
+  if (!data?.length) return null
+
+  const campos = [
+    'km_inicial', 'km_final', 'combustible_inicial', 'combustible_final',
+    'danos_iniciales', 'danos_finales',
+    'foto_frente_i', 'foto_piloto_i', 'foto_copiloto_i', 'foto_trasera_i', 'foto_tablero_i',
+    'foto_frente_f', 'foto_piloto_f', 'foto_copiloto_f', 'foto_trasera_f', 'foto_tablero_f',
+  ] as const
+  const consolidada: Record<string, unknown> = { created_at: data[0].created_at }
+  campos.forEach(campo => {
+    const fila = data.find(e => e[campo] !== null && e[campo] !== undefined && e[campo] !== '')
+    consolidada[campo] = fila?.[campo] ?? null
+  })
+  return consolidada
 }
 
 // El bucket es privado (igual que `documentos`) — toda foto se muestra
