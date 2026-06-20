@@ -249,3 +249,36 @@ export function suscribirMiViaje(viajeId: string, callback: (viaje: any) => void
     )
     .subscribe()
 }
+
+// ── EVIDENCIA ───────────────────────────────────────────────
+
+// Una fila por viaje (no por conductor — desde la perspectiva del usuario
+// no importa si hubo reasignación, solo le interesa el viaje). Si el
+// viaje fue reasignado y hay más de una fila de evidencia, se toma la
+// más reciente.
+export async function getEvidenciaViaje(viajeId: string) {
+  const { data, error } = await supabase
+    .from('evidencias')
+    .select(`
+      km_inicial, km_final, combustible_inicial, combustible_final,
+      danos_iniciales, danos_finales, created_at,
+      foto_frente_i, foto_piloto_i, foto_copiloto_i, foto_trasera_i, foto_tablero_i,
+      foto_frente_f, foto_piloto_f, foto_copiloto_f, foto_trasera_f, foto_tablero_f
+    `)
+    .eq('viaje_id', viajeId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+// El bucket es privado (igual que `documentos`) — toda foto se muestra
+// vía signed URL generada al momento de verla, nunca se guarda una URL
+// pública ni una signed URL ya armada en la base.
+export async function getUrlFotoEvidencia(path: string) {
+  const { data, error } = await supabase.storage.from('evidencias-viaje').createSignedUrl(path, 3600)
+  if (error) throw error
+  return data?.signedUrl ?? null
+}

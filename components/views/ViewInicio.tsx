@@ -117,7 +117,7 @@ export default function ViewInicio() {
           )}
         </button>
         <button
-          onClick={() => showView('view-evidencia')}
+          onClick={() => showView('view-mis-viajes')}
           className="bg-white border border-rr-gray200 p-4 rounded-rrLg shadow-rrCard flex flex-col items-center gap-2 hover:bg-rr-primaryLight transition-colors"
         >
           <div className="w-10 h-10 bg-rr-primaryLight text-rr-primary rounded-rrSm flex items-center justify-center">

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import { cancelarViajeUsuario } from '@/lib/queries/usuario'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faSatelliteDish, faStar, faHeadset, faCheckCircle, faClock, faCircle } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faSatelliteDish, faStar, faHeadset, faCheckCircle, faClock, faCircle, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 
 // Mapa de eventos del timeline por status
 const TIMELINE_STEPS = [
@@ -195,6 +195,18 @@ export default function ViewDetalleViaje() {
             </p>
             <p className="text-xs text-slate-500 mt-1">Placas: <span className="font-mono font-bold">{vehiculo.placas}</span></p>
           </div>
+        )}
+
+        {/* Evidencia fotográfica */}
+        {currentIdx >= STATUS_ORDER.indexOf('Evidencia inicial pendiente') && (
+          <button onClick={() => showView('view-evidencia')}
+            className="w-full bg-white border border-slate-200 rounded-xl p-4 mb-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-800">Ver evidencia del traslado</p>
+              <p className="text-xs text-slate-500 mt-0.5">Fotos del estado del vehículo, kilometraje y combustible</p>
+            </div>
+            <FontAwesomeIcon icon={faChevronRight} className="text-slate-400" />
+          </button>
         )}
 
         {/* Timeline del viaje */}
