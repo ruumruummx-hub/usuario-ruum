@@ -27,26 +27,67 @@ export async function logout() {
 
 // ── PERFIL ──────────────────────────────────────────────────
 
-export async function getPerfilUsuario() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data, error } = await supabase
+// Recibe authId ya resuelto (de la sesión/listener), igual que el
+// resto de funciones de este módulo — no se re-deriva aquí dentro
+// vía supabase.auth.getUser() para no duplicar esa responsabilidad.
+export async function getPerfilUsuario(authId: string) {
+  const { data } = await supabase
     .from('usuarios')
-    .select('*')
-    .eq('auth_id', user.id)
-    .single()
+    .select('id, nombre, apellido, email, telefono')
+    .eq('auth_id', authId)
+    .maybeSingle()
 
-  if (error) return null
   return data
+}
+
+// Crea la fila en `usuarios` a partir de los datos que quedaron en
+// user_metadata durante el registro (paso previo a la verificación
+// de OTP). Si no hay metadata de perfil o falta nombre/apellido, no
+// hace nada — ese caso lo maneja el flujo de "completar registro".
+export async function crearPerfilDesdeAuth(user: {
+  id: string; email?: string | null
+  user_metadata?: Record<string, unknown>
+}) {
+  const metadata = user.user_metadata ?? {}
+  const perfil = metadata.usuario_perfil as Record<string, unknown> | undefined
+  if (!perfil?.nombre || !perfil?.apellido) return null
+
+  const email = String(perfil.email ?? user.email ?? '')
+  if (!email) return null
+
+  const { error } = await supabase.from('usuarios').insert({
+    auth_id: user.id,
+    nombre: String(perfil.nombre),
+    apellido: String(perfil.apellido),
+    curp: perfil.curp ? String(perfil.curp) : null,
+    email,
+    telefono: perfil.telefono ? String(perfil.telefono) : null,
+    tipo: String(perfil.tipo ?? 'Personal'),
+    estatus: String(perfil.estatus ?? 'Activo'),
+    calle: perfil.calle ? String(perfil.calle) : null,
+    numero: perfil.numero ? String(perfil.numero) : null,
+    colonia: perfil.colonia ? String(perfil.colonia) : null,
+    municipio: perfil.municipio ? String(perfil.municipio) : null,
+    estado_geo: perfil.estado_geo ? String(perfil.estado_geo) : null,
+    codigo_postal: perfil.codigo_postal ? String(perfil.codigo_postal) : null,
+    razon_social: perfil.razon_social ? String(perfil.razon_social) : null,
+    rfc: perfil.rfc ? String(perfil.rfc) : null,
+    regimen_fiscal: perfil.regimen_fiscal ? String(perfil.regimen_fiscal) : null,
+    cfdi: perfil.cfdi ? String(perfil.cfdi) : null,
+    domicilio_fiscal: perfil.domicilio_fiscal ? String(perfil.domicilio_fiscal) : null,
+  })
+
+  if (error) {
+    console.error('Error creando perfil de usuario:', error)
+    return null
+  }
+
+  return getPerfilUsuario(user.id)
 }
 
 // ── VIAJES ──────────────────────────────────────────────────
 
-export async function getMisViajes() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
+export async function getMisViajes(usuarioId: string) {
   const { data, error } = await supabase
     .from('viajes')
     .select(`
@@ -57,8 +98,7 @@ export async function getMisViajes() {
       conductores(nombre, apellido, calificacion, foto_url),
       vehiculos(marca, modelo, placas)
     `)
-    .eq('usuario_id', (await supabase
-      .from('usuarios').select('id').eq('auth_id', user.id).single()).data?.id ?? '')
+    .eq('usuario_id', usuarioId)
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -82,36 +122,30 @@ export async function getDetalleViaje(viajeId: string) {
   return data
 }
 
-export async function solicitarViaje(payload: {
-  vehiculo_marca: string; vehiculo_modelo: string; vehiculo_anio?: string
-  vehiculo_color?: string; vehiculo_placas: string; vehiculo_transmision?: string
-  origen_calle: string; origen_numero?: string; origen_colonia?: string
-  origen_estado?: string; origen_cp?: string; origen_contacto?: string; origen_telefono?: string
-  destino_calle: string; destino_numero?: string; destino_colonia?: string
-  destino_estado?: string; destino_cp?: string; destino_contacto?: string; destino_telefono?: string
-  referencias?: string; instrucciones?: string
-  fecha_programada?: string; hora_programada?: string
-  tipo_servicio?: string
-}) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('No autenticado')
-
-  // Obtener usuario_id desde la tabla usuarios
-  const { data: usuarioRow } = await supabase
-    .from('usuarios').select('id').eq('auth_id', user.id).single()
-  if (!usuarioRow) throw new Error('Perfil de usuario no encontrado')
-
+export async function solicitarViaje(
+  usuario: { id: string; nombre: string; apellido: string },
+  payload: {
+    marca: string; modelo: string; anio?: string
+    color?: string; placas: string; transmision?: string
+    origen_calle: string; origen_numero?: string; origen_colonia?: string
+    origen_estado?: string; origen_cp?: string; origen_contacto?: string; origen_telefono?: string
+    destino_calle: string; destino_numero?: string; destino_colonia?: string
+    destino_estado?: string; destino_cp?: string; destino_contacto?: string; destino_telefono?: string
+    referencias?: string; instrucciones?: string
+    fecha_programada?: string; hora_programada?: string
+  }
+) {
   // Crear vehículo si no existe
   const { data: vehiculo } = await supabase
     .from('vehiculos')
     .insert({
-      usuario_id: usuarioRow.id,
-      marca: payload.vehiculo_marca.toUpperCase(),
-      modelo: payload.vehiculo_modelo.toUpperCase(),
-      anio: payload.vehiculo_anio,
-      color: payload.vehiculo_color?.toUpperCase(),
-      placas: payload.vehiculo_placas.toUpperCase(),
-      transmision: payload.vehiculo_transmision,
+      usuario_id: usuario.id,
+      marca: payload.marca.toUpperCase(),
+      modelo: payload.modelo.toUpperCase(),
+      anio: payload.anio ?? null,
+      color: payload.color?.toUpperCase() ?? null,
+      placas: payload.placas.toUpperCase(),
+      transmision: payload.transmision ?? null,
     })
     .select()
     .single()
@@ -120,26 +154,26 @@ export async function solicitarViaje(payload: {
   const { data: viaje, error } = await supabase
     .from('viajes')
     .insert({
-      usuario_id: usuarioRow.id,
-      vehiculo_id: vehiculo?.id,
+      usuario_id: usuario.id,
+      vehiculo_id: vehiculo?.id ?? null,
       origen_calle: payload.origen_calle.toUpperCase(),
-      origen_numero: payload.origen_numero,
-      origen_colonia: payload.origen_colonia?.toUpperCase(),
-      origen_estado: payload.origen_estado?.toUpperCase(),
-      origen_cp: payload.origen_cp,
-      origen_contacto: payload.origen_contacto?.toUpperCase(),
-      origen_telefono: payload.origen_telefono,
+      origen_numero: payload.origen_numero ?? null,
+      origen_colonia: payload.origen_colonia?.toUpperCase() ?? null,
+      origen_estado: payload.origen_estado?.toUpperCase() ?? null,
+      origen_cp: payload.origen_cp ?? null,
+      origen_contacto: payload.origen_contacto?.toUpperCase() ?? null,
+      origen_telefono: payload.origen_telefono ?? null,
       destino_calle: payload.destino_calle.toUpperCase(),
-      destino_numero: payload.destino_numero,
-      destino_colonia: payload.destino_colonia?.toUpperCase(),
-      destino_estado: payload.destino_estado?.toUpperCase(),
-      destino_cp: payload.destino_cp,
-      destino_contacto: payload.destino_contacto?.toUpperCase(),
-      destino_telefono: payload.destino_telefono,
-      referencias: payload.referencias,
-      instrucciones: payload.instrucciones,
-      fecha_programada: payload.fecha_programada,
-      hora_programada: payload.hora_programada,
+      destino_numero: payload.destino_numero ?? null,
+      destino_colonia: payload.destino_colonia?.toUpperCase() ?? null,
+      destino_estado: payload.destino_estado?.toUpperCase() ?? null,
+      destino_cp: payload.destino_cp ?? null,
+      destino_contacto: payload.destino_contacto?.toUpperCase() ?? null,
+      destino_telefono: payload.destino_telefono ?? null,
+      referencias: payload.referencias ?? null,
+      instrucciones: payload.instrucciones ?? null,
+      fecha_programada: payload.fecha_programada ?? null,
+      hora_programada: payload.hora_programada ?? null,
       status: 'Solicitud recibida',
     })
     .select()
@@ -147,11 +181,12 @@ export async function solicitarViaje(payload: {
 
   if (error) throw error
 
-  // Timeline inicial
+  // Timeline inicial — actor es el nombre real del usuario, no un
+  // marcador genérico, para que el historial sea legible para Admin.
   await supabase.from('timeline_viaje').insert({
     viaje_id: viaje.id,
     evento: 'Solicitud creada por el usuario',
-    actor: 'Usuario',
+    actor: `${usuario.nombre} ${usuario.apellido}`,
     actor_tipo: 'usuario',
   })
 
@@ -160,6 +195,24 @@ export async function solicitarViaje(payload: {
 
 // ── REALTIME ────────────────────────────────────────────────
 
+// Suscripción real usada por AppContext: todos los viajes del usuario,
+// cualquier evento, simplemente dispara un refetch de la lista.
+export function suscribirMisViajes(usuarioId: string, callback: () => void) {
+  return supabase
+    .channel(`viajes-usuario-${usuarioId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'viajes', filter: `usuario_id=eq.${usuarioId}` },
+      callback
+    )
+    .subscribe()
+}
+
+// Suscripción a UN viaje específico, con el row actualizado entregado
+// directo al callback. Pensada para una futura vista de detalle con
+// actualización en vivo (hoy ViewDetalleViaje no la usa — solo muestra
+// lo que ya está cargado en la lista). No se modifica ni se conecta
+// aquí: eso es una decisión de producto, no de esta migración.
 export function suscribirMiViaje(viajeId: string, callback: (viaje: any) => void) {
   return supabase
     .channel(`usuario-viaje-${viajeId}`)

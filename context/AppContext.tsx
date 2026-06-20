@@ -2,6 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import {
+  getPerfilUsuario, crearPerfilDesdeAuth, getMisViajes,
+  solicitarViaje as solicitarViajeQuery, suscribirMisViajes,
+} from '@/lib/queries/usuario'
 import type { ViewId, StepId } from '@/lib/types'
 import type { User } from '@supabase/supabase-js'
 
@@ -97,11 +101,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Cargar perfil desde la tabla usuarios ──────────────────────────────────
   const cargarPerfil = async (uid: string): Promise<UsuarioPerfil | null> => {
-    const { data } = await supabase
-      .from('usuarios')
-      .select('id, nombre, apellido, email, telefono')
-      .eq('auth_id', uid)
-      .single()
+    const data = await getPerfilUsuario(uid)
     if (data) {
       const perfil = data as UsuarioPerfil
       setUsuario(perfil)
@@ -111,42 +111,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null
   }
 
-  const crearPerfilDesdeAuth = async (user: User): Promise<UsuarioPerfil | null> => {
-    const metadata = user.user_metadata as Record<string, unknown>
-    const perfil = metadata.usuario_perfil as Partial<UsuarioPerfilInsert> | undefined
-    if (!perfil?.nombre || !perfil?.apellido) return null
-
-    const payload: UsuarioPerfilInsert & { auth_id: string } = {
-      auth_id: user.id,
-      nombre: String(perfil.nombre),
-      apellido: String(perfil.apellido),
-      curp: perfil.curp ? String(perfil.curp) : null,
-      email: String(perfil.email ?? user.email ?? ''),
-      telefono: perfil.telefono ? String(perfil.telefono) : null,
-      tipo: String(perfil.tipo ?? 'Personal'),
-      estatus: String(perfil.estatus ?? 'Activo'),
-      calle: perfil.calle ? String(perfil.calle) : null,
-      numero: perfil.numero ? String(perfil.numero) : null,
-      colonia: perfil.colonia ? String(perfil.colonia) : null,
-      municipio: perfil.municipio ? String(perfil.municipio) : null,
-      estado_geo: perfil.estado_geo ? String(perfil.estado_geo) : null,
-      codigo_postal: perfil.codigo_postal ? String(perfil.codigo_postal) : null,
-      razon_social: perfil.razon_social ? String(perfil.razon_social) : null,
-      rfc: perfil.rfc ? String(perfil.rfc) : null,
-      regimen_fiscal: perfil.regimen_fiscal ? String(perfil.regimen_fiscal) : null,
-      cfdi: perfil.cfdi ? String(perfil.cfdi) : null,
-      domicilio_fiscal: perfil.domicilio_fiscal ? String(perfil.domicilio_fiscal) : null,
+  const crearPerfilLocal = async (user: User): Promise<UsuarioPerfil | null> => {
+    const perfil = await crearPerfilDesdeAuth(user)
+    if (perfil) {
+      setUsuario(perfil as UsuarioPerfil)
+      usuarioRef.current = perfil as UsuarioPerfil
     }
-
-    if (!payload.email) return null
-
-    const { error } = await supabase.from('usuarios').insert(payload)
-    if (error) {
-      console.error('Error creando perfil de usuario:', error)
-      return null
-    }
-
-    return cargarPerfil(user.id)
+    return perfil as UsuarioPerfil | null
   }
 
   // ── Verificar sesión al montar ─────────────────────────────────────────────
@@ -155,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setAutenticado(true)
         const perfil = await cargarPerfil(session.user.id)
-        if (!perfil) await crearPerfilDesdeAuth(session.user)
+        if (!perfil) await crearPerfilLocal(session.user)
       }
       setAuthReady(true)
     })
@@ -164,7 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setAutenticado(true)
         const perfil = await cargarPerfil(session.user.id)
-        if (!perfil) await crearPerfilDesdeAuth(session.user)
+        if (!perfil) await crearPerfilLocal(session.user)
       } else {
         setAutenticado(false)
         setUsuario(null)
@@ -181,13 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!usuario) return
     recargarViajes()
 
-    const channel = supabase
-      .channel(`viajes-usuario-${usuario.id}`)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'viajes',
-        filter: `usuario_id=eq.${usuario.id}`,
-      }, () => { recargarViajes() })
-      .subscribe()
+    const channel = suscribirMisViajes(usuario.id, () => { recargarViajes() })
 
     return () => { supabase.removeChannel(channel) }
   }, [usuario])
@@ -196,19 +161,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const u = usuarioRef.current
     if (!u) return
     setCargandoViajes(true)
-    const { data, error } = await supabase
-      .from('viajes')
-      .select(`
-        id, folio, status, fecha_programada, hora_programada,
-        origen_calle, origen_colonia, destino_calle, destino_colonia,
-        tarifa_cliente,
-        conductores(nombre, apellido, calificacion),
-        vehiculos(marca, modelo, placas)
-      `)
-      .eq('usuario_id', u.id)
-      .order('created_at', { ascending: false })
-
-    if (!error && data) setMisViajes(data as unknown as ViajeUsuario[])
+    try {
+      const data = await getMisViajes(u.id)
+      setMisViajes(data as unknown as ViajeUsuario[])
+    } catch (e) {
+      console.error('Error cargando viajes:', e)
+    }
     setCargandoViajes(false)
   }
 
@@ -224,63 +182,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // 1. Registrar vehículo
-      const { data: vehiculo } = await supabase
-        .from('vehiculos')
-        .insert({
-          usuario_id: u.id,
-          marca: datos.marca.toUpperCase(),
-          modelo: datos.modelo.toUpperCase(),
-          anio: datos.anio ?? null,
-          color: datos.color?.toUpperCase() ?? null,
-          placas: datos.placas.toUpperCase(),
-          transmision: datos.transmision ?? null,
-        })
-        .select()
-        .single()
-
-      // 2. Crear viaje
-      const { data: viaje, error } = await supabase
-        .from('viajes')
-        .insert({
-          usuario_id: u.id,
-          vehiculo_id: vehiculo?.id ?? null,
-          origen_calle: datos.origen_calle.toUpperCase(),
-          origen_numero: datos.origen_numero ?? null,
-          origen_colonia: datos.origen_colonia?.toUpperCase() ?? null,
-          origen_estado: datos.origen_estado?.toUpperCase() ?? null,
-          origen_cp: datos.origen_cp ?? null,
-          origen_contacto: datos.origen_contacto?.toUpperCase() ?? null,
-          origen_telefono: datos.origen_telefono ?? null,
-          destino_calle: datos.destino_calle.toUpperCase(),
-          destino_numero: datos.destino_numero ?? null,
-          destino_colonia: datos.destino_colonia?.toUpperCase() ?? null,
-          destino_estado: datos.destino_estado?.toUpperCase() ?? null,
-          destino_cp: datos.destino_cp ?? null,
-          destino_contacto: datos.destino_contacto?.toUpperCase() ?? null,
-          destino_telefono: datos.destino_telefono ?? null,
-          referencias: datos.referencias ?? null,
-          instrucciones: datos.instrucciones ?? null,
-          fecha_programada: datos.fecha_programada ?? null,
-          hora_programada: datos.hora_programada ?? null,
-          status: 'Solicitud recibida',
-        })
-        .select()
-        .single()
-
-      if (error) { console.error('Error creando viaje:', error); return false }
-
-      // 3. Timeline
-      await supabase.from('timeline_viaje').insert({
-        viaje_id: viaje.id,
-        evento: 'Solicitud creada por el usuario',
-        actor: `${u.nombre} ${u.apellido}`,
-        actor_tipo: 'usuario',
-      })
-
+      await solicitarViajeQuery(u, datos)
       await recargarViajes()
       return true
-
     } catch (e) {
       console.error('Error en solicitarViaje:', e)
       return false
