@@ -11,11 +11,12 @@ import ViewDetalleViaje from './views/ViewDetalleViaje'
 import ViewEvidencia from './views/ViewEvidencia'
 import ViewCuenta from './views/ViewCuenta'
 import ViewOnboardingUsuario from './views/ViewOnboardingUsuario'
+import ViewCambioPasswordObligatorio from './views/ViewCambioPasswordObligatorio'
 
 const ONBOARDING_KEY = 'ruum_usuario_onboarding'
 
 export default function MobileApp() {
-  const { currentView, authReady, autenticado, showView, setStep } = useApp()
+  const { currentView, authReady, autenticado, usuario, showView, setStep } = useApp()
 
   const [onboardingDone, setOnboardingDone] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
@@ -46,6 +47,30 @@ export default function MobileApp() {
     return (
       <div className="app-shell overflow-y-auto">
         <ViewOnboardingUsuario onAuth={handleAuth} />
+      </div>
+    )
+  }
+
+  // Autenticado pero el perfil (usuarios) todavía no cargó — sin esto,
+  // habría un parpadeo donde se muestra la app normal antes de saber si
+  // requiere_cambio_password es true.
+  if (!usuario) {
+    return (
+      <div className="app-shell flex flex-col items-center justify-center bg-white">
+        <div className="w-14 h-14 bg-rr-primary rounded-2xl flex items-center justify-center mb-4 animate-pulse">
+          <span className="text-rr-secondary font-black text-xl">RR</span>
+        </div>
+        <p className="text-sm text-slate-400">Cargando...</p>
+      </div>
+    )
+  }
+
+  // Cuenta creada por el admin con contraseña provisional — obligatorio
+  // cambiarla antes de ver cualquier otra cosa de la app.
+  if (usuario.requiere_cambio_password) {
+    return (
+      <div className="app-shell overflow-y-auto">
+        <ViewCambioPasswordObligatorio />
       </div>
     )
   }

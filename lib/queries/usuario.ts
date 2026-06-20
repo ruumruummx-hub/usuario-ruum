@@ -33,11 +33,28 @@ export async function logout() {
 export async function getPerfilUsuario(authId: string) {
   const { data } = await supabase
     .from('usuarios')
-    .select('id, nombre, apellido, email, telefono')
+    .select('id, nombre, apellido, email, telefono, requiere_cambio_password')
     .eq('auth_id', authId)
     .maybeSingle()
 
   return data
+}
+
+// Cambia la contraseña de la sesión activa y limpia el flag de cuenta
+// provisional. auth.updateUser() requiere una sesión válida (no el
+// auth_id ni la contraseña anterior) — quien llama esta función ya
+// pasó por signInWithPassword con la contraseña provisional, así que
+// hay sesión activa por definición.
+export async function completarCambioPassword(usuarioId: string, nuevaPassword: string) {
+  const { error: authError } = await supabase.auth.updateUser({ password: nuevaPassword })
+  if (authError) throw authError
+
+  const { error: dbError } = await supabase
+    .from('usuarios')
+    .update({ requiere_cambio_password: false })
+    .eq('id', usuarioId)
+
+  if (dbError) throw dbError
 }
 
 // Crea la fila en `usuarios` a partir de los datos que quedaron en

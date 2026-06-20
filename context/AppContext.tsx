@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import {
   getPerfilUsuario, crearPerfilDesdeAuth, getMisViajes,
   solicitarViaje as solicitarViajeQuery, suscribirMisViajes,
+  completarCambioPassword,
 } from '@/lib/queries/usuario'
 import type { ViewId, StepId } from '@/lib/types'
 import type { User } from '@supabase/supabase-js'
@@ -31,6 +32,7 @@ export interface UsuarioPerfil {
   apellido: string
   email: string | null
   telefono: string | null
+  requiere_cambio_password: boolean
 }
 
 type UsuarioPerfilInsert = {
@@ -68,6 +70,7 @@ interface AppContextType {
   cargandoViajes: boolean
   solicitarViaje: (datos: DatosSolicitud) => Promise<boolean>
   recargarViajes: () => Promise<void>
+  cambiarPasswordObligatorio: (nuevaPassword: string) => Promise<boolean>
 }
 
 export interface DatosSolicitud {
@@ -191,6 +194,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // ── Cambio de contraseña obligatorio (cuentas con password provisional) ───
+  const cambiarPasswordObligatorio = async (nuevaPassword: string): Promise<boolean> => {
+    const u = usuarioRef.current
+    if (!u) return false
+    try {
+      await completarCambioPassword(u.id, nuevaPassword)
+      const actualizado = { ...u, requiere_cambio_password: false }
+      setUsuario(actualizado)
+      usuarioRef.current = actualizado
+      return true
+    } catch (e) {
+      console.error('Error cambiando contraseña:', e)
+      return false
+    }
+  }
+
   return (
     <AppContext.Provider value={{
       currentView, currentStep,
@@ -200,6 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       authReady, autenticado,
       usuario, misViajes, cargandoViajes,
       solicitarViaje, recargarViajes,
+      cambiarPasswordObligatorio,
     }}>
       {children}
     </AppContext.Provider>

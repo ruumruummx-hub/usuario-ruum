@@ -110,12 +110,43 @@ export async function POST(request: Request) {
     return badRequest(authError?.message ?? 'No se pudo crear el usuario de autenticación.', 422)
   }
 
-  // ── 2. Insertar el perfil de negocio en `usuarios` ──────────────────────────
-  const { data: nuevoUsuario, error: dbError } = await admin
+  // ── 2. Vincular el perfil de negocio en `usuarios` ──────────────────────────
+  // Si el admin ya había creado este correo antes (NuevoViajeForm o
+  // UsuariosView, con auth_id null porque nunca pasó por un alta real de
+  // Auth), no insertamos una fila duplicada: reclamamos esa fila existente
+  // con el auth_id que se acaba de crear, y refrescamos sus datos con lo
+  // que la persona capturó aquí (más confiable que lo que el admin pudo
+  // haber llenado a distancia). requiere_cambio_password se limpia: la
+  // contraseña que se está guardando en este registro ya es la que la
+  // persona eligió, no queda nada provisional por cambiar.
+  const { data: filaExistente } = await admin
     .from('usuarios')
-    .insert({ auth_id: authData.user.id, ...usuarioPayload })
     .select('id')
-    .single()
+    .eq('email', email)
+    .is('auth_id', null)
+    .maybeSingle()
+
+  let nuevoUsuario: { id: string } | null = null
+  let dbError: { message: string } | null = null
+
+  if (filaExistente) {
+    const { data, error } = await admin
+      .from('usuarios')
+      .update({ auth_id: authData.user.id, requiere_cambio_password: false, ...usuarioPayload })
+      .eq('id', filaExistente.id)
+      .select('id')
+      .single()
+    nuevoUsuario = data
+    dbError = error
+  } else {
+    const { data, error } = await admin
+      .from('usuarios')
+      .insert({ auth_id: authData.user.id, ...usuarioPayload })
+      .select('id')
+      .single()
+    nuevoUsuario = data
+    dbError = error
+  }
 
   if (dbError || !nuevoUsuario) {
     await admin.auth.admin.deleteUser(authData.user.id).catch(() => undefined)
