@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { useApp } from '@/context/AppContext'
+import { cancelarViajeUsuario } from '@/lib/queries/usuario'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faSatelliteDish, faStar, faHeadset, faCheckCircle, faClock, faCircle } from '@fortawesome/free-solid-svg-icons'
 
@@ -21,7 +23,6 @@ const STATUS_ORDER = TIMELINE_STEPS.map(s => s.key)
 
 const statusColor: Record<string, string> = {
   'Solicitud recibida':         'bg-slate-100 text-slate-600',
-  'Pendiente de revisión':      'bg-amber-100 text-amber-700',
   'Pendiente de asignación':    'bg-amber-100 text-amber-700',
   'Conductor asignado':         'bg-blue-100 text-blue-700',
   'Conductor en camino':        'bg-blue-100 text-blue-700',
@@ -32,7 +33,9 @@ const statusColor: Record<string, string> = {
 }
 
 export default function ViewDetalleViaje() {
-  const { showView, viajeSeleccionado } = useApp()
+  const { showView, viajeSeleccionado, setViajeSeleccionado, recargarViajes, usuario } = useApp()
+  const [cancelando, setCancelando] = useState(false)
+  const [errorCancelacion, setErrorCancelacion] = useState('')
   const viaje = viajeSeleccionado
 
   if (!viaje) {
@@ -53,6 +56,30 @@ export default function ViewDetalleViaje() {
   const currentIdx = STATUS_ORDER.indexOf(viaje.status)
   const esFinalizado = viaje.status === 'Finalizado'
   const esCancelado = viaje.status === 'Cancelado'
+  const puedeCancelar = ['Solicitud recibida', 'Pendiente de asignación', 'Conductor asignado'].includes(viaje.status)
+  const tienePenalizacion = viaje.status === 'Conductor asignado'
+  const penalizacionEstimada = tienePenalizacion ? Number(viaje.tarifa_cliente ?? 0) * 0.10 : 0
+
+  const cancelar = async () => {
+    if (!usuario || !puedeCancelar) return
+    const detalle = tienePenalizacion
+      ? `Se aplicará una penalización de $${penalizacionEstimada.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN (10% de la tarifa).`
+      : 'Esta cancelación no genera penalización.'
+    if (!window.confirm(`¿Confirmas que deseas cancelar el viaje?\n\n${detalle}`)) return
+
+    setCancelando(true)
+    setErrorCancelacion('')
+    try {
+      await cancelarViajeUsuario(viaje.id)
+      setViajeSeleccionado({ ...viaje, status: 'Cancelado' })
+      await recargarViajes()
+    } catch (e) {
+      console.error('Error cancelando viaje:', e)
+      setErrorCancelacion('No se pudo cancelar. El viaje pudo haber avanzado; actualiza e intenta de nuevo o contacta a soporte.')
+    } finally {
+      setCancelando(false)
+    }
+  }
 
   const conductor = viaje.conductores
   const vehiculo = viaje.vehiculos
@@ -202,6 +229,29 @@ export default function ViewDetalleViaje() {
             </div>
           )}
         </div>
+
+        {/* Cancelación */}
+        {puedeCancelar && (
+          <div className="bg-white rounded-xl border border-red-100 p-4 mb-4">
+            <p className="text-sm font-semibold text-slate-800">¿Necesitas cancelar?</p>
+            <p className={`text-xs mt-1 ${tienePenalizacion ? 'text-amber-700' : 'text-slate-500'}`}>
+              {tienePenalizacion
+                ? `El conductor ya fue asignado. Se aplicará una penalización del 10% ($${penalizacionEstimada.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN).`
+                : 'Puedes cancelar sin penalización antes de que se asigne un conductor.'}
+            </p>
+            {errorCancelacion && <p className="text-xs text-red-600 mt-2">{errorCancelacion}</p>}
+            <button onClick={cancelar} disabled={cancelando}
+              className="w-full mt-3 border border-red-300 text-red-600 font-semibold py-2.5 rounded-xl hover:bg-red-50 disabled:opacity-60 transition-colors">
+              {cancelando ? 'Cancelando...' : 'Cancelar viaje'}
+            </button>
+          </div>
+        )}
+        {!esFinalizado && !esCancelado && !puedeCancelar && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-4">
+            <p className="text-sm font-semibold text-amber-800">Cancelación desde soporte</p>
+            <p className="text-xs text-amber-700 mt-1">El conductor ya inició la operación. Contacta a soporte para revisar tu caso.</p>
+          </div>
+        )}
 
         {/* Soporte */}
         <button className="w-full bg-white border border-slate-300 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">

@@ -122,6 +122,15 @@ export async function getDetalleViaje(viajeId: string) {
   return data
 }
 
+export async function cancelarViajeUsuario(viajeId: string) {
+  const { data, error } = await supabase.rpc('cancelar_viaje_usuario', {
+    p_viaje_id: viajeId,
+  })
+
+  if (error) throw error
+  return data as { viaje_id: string; status: 'Cancelado'; penalizacion: number }
+}
+
 export async function solicitarViaje(
   usuario: { id: string; nombre: string; apellido: string },
   payload: {

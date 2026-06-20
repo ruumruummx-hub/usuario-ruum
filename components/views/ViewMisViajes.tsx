@@ -7,7 +7,7 @@ import { faChevronRight, faCheckCircle, faSpinner, faPlus } from '@fortawesome/f
 
 type Tab = 'Activos' | 'Programados' | 'Finalizados'
 
-const ACTIVOS = ['Solicitud recibida','Pendiente de revisión','Pendiente de asignación','Conductor asignado','Conductor en camino','Recolección en proceso','Evidencia inicial pendiente','Traslado en curso','Entrega en proceso','Evidencia final pendiente','En revisión por incidencia']
+const ACTIVOS = ['Solicitud recibida','Pendiente de asignación','Conductor asignado','Conductor en camino','Recolección en proceso','Evidencia inicial pendiente','Traslado en curso','Entrega en proceso','Evidencia final pendiente','En revisión por incidencia']
 const PROGRAMADOS = ['Conductor asignado']
 const FINALIZADOS = ['Finalizado','Cancelado']
 
