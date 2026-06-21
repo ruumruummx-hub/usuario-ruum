@@ -25,8 +25,10 @@ export interface ViajeUsuario {
   tarifa_cliente: number
   evidencias?: { id: string }[] | null
   conductores: {
-    nombre: string; apellido: string; calificacion: number
+    id: string; nombre: string; apellido: string; calificacion: number
     foto_url: string | null; telefono: string | null; certificacion: string | null
+    disponibilidad: string; viajes_realizados: number
+    municipio: string | null; estado_geo: string | null
   } | null
   vehiculos: { marca: string; modelo: string; placas: string } | null
 }
