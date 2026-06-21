@@ -459,3 +459,4 @@ export async function subirDocumentoUsuario(
   }
   return res.json() as Promise<{ ok: true; path: string }>
 }
+
