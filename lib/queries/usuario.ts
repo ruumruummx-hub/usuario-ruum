@@ -150,7 +150,7 @@ export async function getMisViajes(usuarioId: string) {
       origen_calle, origen_colonia,
       destino_calle, destino_colonia,
       tarifa_cliente, created_at,
-      conductores(nombre, apellido, calificacion, foto_url, telefono, certificacion),
+      conductores(id, nombre, apellido, calificacion, foto_url, telefono, certificacion, disponibilidad, viajes_realizados, municipio, estado_geo),
       vehiculos(marca, modelo, placas),
       evidencias(id)
     `)
@@ -166,7 +166,7 @@ export async function getDetalleViaje(viajeId: string) {
     .from('viajes')
     .select(`
       *,
-      conductores(nombre, apellido, calificacion, telefono, certificacion),
+      conductores(id, nombre, apellido, calificacion, foto_url, telefono, certificacion, disponibilidad, viajes_realizados, municipio, estado_geo),
       vehiculos(marca, modelo, anio, color, placas),
       evidencias(*),
       timeline_viaje(evento, actor, actor_tipo, created_at)

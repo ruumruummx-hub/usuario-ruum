@@ -36,6 +36,7 @@ export default function ViewDetalleViaje() {
   const { showView, viajeSeleccionado, setViajeSeleccionado, recargarViajes, usuario } = useApp()
   const [cancelando, setCancelando] = useState(false)
   const [errorCancelacion, setErrorCancelacion] = useState('')
+  const [mostrarDetalleConductor, setMostrarDetalleConductor] = useState(false)
   const viaje = viajeSeleccionado
 
   if (!viaje) {
@@ -83,9 +84,62 @@ export default function ViewDetalleViaje() {
 
   const conductor = viaje.conductores
   const vehiculo = viaje.vehiculos
+  const fotoConductor = conductor?.foto_url?.startsWith('http')
+    ? conductor.foto_url
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(`${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}`)}&background=0D8ABC&color=fff&size=256`
+  const certificacionActiva = conductor?.certificacion === 'Activo'
 
   return (
     <div className="fade-in pb-24">
+      {conductor && mostrarDetalleConductor && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setMostrarDetalleConductor(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase">Conductor asignado</p>
+                <h3 className="text-lg font-bold text-slate-900">Detalle operativo</h3>
+              </div>
+              <button onClick={() => setMostrarDetalleConductor(false)} className="w-9 h-9 rounded-full bg-slate-100 text-slate-500">✕</button>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-4 mb-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={fotoConductor} alt={`${conductor.nombre} ${conductor.apellido}`} className="w-20 h-20 rounded-full object-cover border-4 border-white shadow" />
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-slate-900">{conductor.nombre} {conductor.apellido}</p>
+                  <span className={`inline-flex mt-1 px-2 py-1 rounded-full text-[10px] font-bold ${certificacionActiva ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {conductor.certificacion ?? 'Pendiente de validación'}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Calificación</p>
+                  <p className="font-bold text-slate-800"><FontAwesomeIcon icon={faStar} className="text-amber-400 mr-1" />{Number(conductor.calificacion ?? 0).toFixed(1)}</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Viajes realizados</p>
+                  <p className="font-bold text-slate-800">{conductor.viajes_realizados ?? 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Disponibilidad</p>
+                  <p className="font-bold text-slate-800">{conductor.disponibilidad ?? '—'}</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Zona</p>
+                  <p className="font-bold text-slate-800 truncate">{[conductor.municipio, conductor.estado_geo].filter(Boolean).join(', ') || '—'}</p>
+                </div>
+              </div>
+              {conductor.telefono && (
+                <a href={`tel:${conductor.telefono}`} className="block w-full bg-slate-900 text-white text-center font-semibold py-3 rounded-xl">
+                  Llamar al conductor · {conductor.telefono}
+                </a>
+              )}
+              <p className="text-[10px] text-slate-400 text-center mt-3">ID operativo: {conductor.id.slice(0, 8).toUpperCase()}</p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header — mapa simulado */}
       <div className="bg-slate-200 h-44 md:h-56 relative flex items-center justify-center">
         <div
@@ -164,20 +218,24 @@ export default function ViewDetalleViaje() {
             <div className="flex items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`https://ui-avatars.com/api/?name=${conductor.nombre}+${conductor.apellido}&background=0D8ABC&color=fff&size=128`}
+                src={fotoConductor}
                 className="w-14 h-14 rounded-full border-2 border-white shadow-sm"
                 alt={`${conductor.nombre} ${conductor.apellido}`}
               />
             <div className="flex-1 min-w-0">
                 <p className="text-base font-bold text-slate-800">{conductor.nombre} {conductor.apellido}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">CERTIFICADO</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${certificacionActiva ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{conductor.certificacion ?? 'Pendiente de validación'}</span>
                   <span className="text-xs text-slate-500">
                     <FontAwesomeIcon icon={faStar} className="text-amber-400" /> {conductor.calificacion}
                   </span>
                 </div>
               </div>
             </div>
+            <button onClick={() => setMostrarDetalleConductor(true)} className="w-full mt-3 pt-3 border-t border-slate-100 text-sm font-semibold text-blue-600 flex items-center justify-between">
+              Ver detalle del conductor
+              <FontAwesomeIcon icon={faChevronRight} className="text-slate-400" />
+            </button>
           </div>
         ) : (
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
