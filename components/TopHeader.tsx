@@ -1,7 +1,7 @@
 'use client'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faUser } from '@fortawesome/free-solid-svg-icons'
+import { faBell } from '@fortawesome/free-solid-svg-icons'
 
 export default function TopHeader() {
   return (
@@ -18,9 +18,6 @@ export default function TopHeader() {
           <button className="relative h-10 w-10 rounded-full bg-white/10 text-white/80 hover:bg-white/15 hover:text-white">
             <FontAwesomeIcon icon={faBell} className="text-base" />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rr-warning rounded-full border border-rr-secondary" />
-          </button>
-          <button className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/15 hover:text-white">
-            <FontAwesomeIcon icon={faUser} className="text-base" />
           </button>
         </div>
       </div>

@@ -2,31 +2,13 @@
 
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { REGIMENES_FISCALES, USOS_CFDI } from '@/lib/constants/fiscal'
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
 type Step = 'welcome' | 'register' | 'login' | 'documents' | 'legal'
 type DocFile = { file: File; preview: string } | null
 
 const TIPOS_USUARIO = ['Personal','Empresarial','Agencia','Lote','Flotilla','Arrendadora','Taller','Aseguradora','Entrega al cliente']
-
-const REGIMENES = [
-  '601 - General de Ley Personas Morales',
-  '612 - Personas Físicas con Actividades Empresariales',
-  '616 - Sin obligaciones fiscales',
-  '621 - Incorporación Fiscal',
-  '626 - Régimen Simplificado de Confianza',
-  '605 - Sueldos y Salarios',
-  '606 - Arrendamiento',
-  '608 - Demás Ingresos',
-]
-
-const USOS_CFDI = [
-  'G01 - Adquisición de mercancias',
-  'G03 - Gastos en general',
-  'I03 - Equipo de transporte',
-  'S01 - Sin efectos fiscales',
-  'CP01 - Pagos',
-]
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const iCls = (err?: string) =>
@@ -337,7 +319,7 @@ function StepRegister({ onBack, onNext }: {
               <Label req>Régimen fiscal</Label>
               <select value={form.regimenFiscal} onChange={e => set('regimenFiscal', e.target.value)} className={iCls(errors.regimenFiscal)}>
                 <option value="">Seleccionar...</option>
-                {REGIMENES.map(r => <option key={r} value={r}>{r}</option>)}
+                {REGIMENES_FISCALES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
               <Err msg={errors.regimenFiscal} />
             </div>

@@ -2,15 +2,13 @@
 
 import { useApp } from '@/context/AppContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faHome, faPlusCircle, faRoute, faCamera, faUser } from '@fortawesome/free-solid-svg-icons'
+import { faHome, faRoute, faUser } from '@fortawesome/free-solid-svg-icons'
 import type { ViewId } from '@/lib/types'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 
 const navItems: { id: ViewId; icon: IconDefinition; label: string }[] = [
   { id: 'view-inicio', icon: faHome, label: 'Inicio' },
-  { id: 'view-solicitar', icon: faPlusCircle, label: 'Solicitar' },
   { id: 'view-mis-viajes', icon: faRoute, label: 'Mis viajes' },
-  { id: 'view-evidencia', icon: faCamera, label: 'Evidencia' },
   { id: 'view-cuenta', icon: faUser, label: 'Cuenta' },
 ]
 
@@ -24,7 +22,7 @@ export default function BottomNav() {
 
   return (
     <nav className="bg-white/95 border-t border-rr-gray200 px-2 py-2 sm:px-6 sm:py-3 flex justify-center items-center flex-shrink-0 z-20 shadow-rrFloating backdrop-blur">
-      <div className="grid w-full max-w-[1024px] grid-cols-5 gap-1">
+      <div className="grid w-full max-w-[1024px] grid-cols-3 gap-1">
       {navItems.map((item) => {
         const isActive = activeView === item.id
         return (

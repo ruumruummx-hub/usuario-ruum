@@ -2,7 +2,7 @@
 
 import { useApp } from '@/context/AppContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlusCircle, faHistory, faCamera, faShieldAlt, faChevronRight, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { faPlusCircle, faCamera, faHeadset, faShieldAlt, faChevronRight, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { RRBadge, RRButton, RRCard } from '@/components/rr'
 
 export default function ViewInicio() {
@@ -105,25 +105,21 @@ export default function ViewInicio() {
       <h3 className="text-sm font-bold text-rr-gray700 mb-3">Accesos rápidos</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <button
-          onClick={() => showView('view-mis-viajes')}
-          className="bg-white border border-rr-gray200 p-4 rounded-rrLg shadow-rrCard flex flex-col items-center gap-2 hover:bg-rr-primaryLight transition-colors"
-        >
-          <div className="w-10 h-10 bg-rr-primaryLight text-rr-primary rounded-rrSm flex items-center justify-center">
-            <FontAwesomeIcon icon={faHistory} />
-          </div>
-          <span className="text-sm font-medium text-rr-gray700">Mis viajes</span>
-          {misViajes.length > 0 && (
-            <span className="text-xs text-rr-primary font-medium">{misViajes.length} registrado{misViajes.length > 1 ? 's' : ''}</span>
-          )}
-        </button>
-        <button
-          onClick={() => showView('view-mis-viajes')}
+          onClick={() => showView('view-evidencia')}
           className="bg-white border border-rr-gray200 p-4 rounded-rrLg shadow-rrCard flex flex-col items-center gap-2 hover:bg-rr-primaryLight transition-colors"
         >
           <div className="w-10 h-10 bg-rr-primaryLight text-rr-primary rounded-rrSm flex items-center justify-center">
             <FontAwesomeIcon icon={faCamera} />
           </div>
           <span className="text-sm font-medium text-rr-gray700">Ver evidencias</span>
+        </button>
+        <button
+          className="bg-white border border-rr-gray200 p-4 rounded-rrLg shadow-rrCard flex flex-col items-center gap-2 hover:bg-rr-primaryLight transition-colors"
+        >
+          <div className="w-10 h-10 bg-rr-primaryLight text-rr-primary rounded-rrSm flex items-center justify-center">
+            <FontAwesomeIcon icon={faHeadset} />
+          </div>
+          <span className="text-sm font-medium text-rr-gray700">Contactar a soporte</span>
         </button>
       </div>
 

@@ -31,12 +31,21 @@ export async function logout() {
 // resto de funciones de este módulo — no se re-deriva aquí dentro
 // vía supabase.auth.getUser() para no duplicar esa responsabilidad.
 export async function getPerfilUsuario(authId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('usuarios')
-    .select('id, nombre, apellido, email, telefono, requiere_cambio_password')
+    .select(`
+      id, nombre, apellido, email, telefono, requiere_cambio_password,
+      curp, calle, numero, colonia, municipio, estado_geo, codigo_postal,
+      razon_social, nombre_comercial, rfc, regimen_fiscal, cfdi, domicilio_fiscal
+    `)
     .eq('auth_id', authId)
     .maybeSingle()
 
+  // Importante: SIEMPRE se revisa el error. Antes se ignoraba y un error de
+  // consulta (p. ej. una columna que no existe todavía en la base) se
+  // interpretaba como "el usuario no tiene perfil", lo que disparaba un
+  // intento de INSERT duplicado sobre una fila que sí existía.
+  if (error) throw error
   return data
 }
 
@@ -55,6 +64,35 @@ export async function completarCambioPassword(usuarioId: string, nuevaPassword: 
     .eq('id', usuarioId)
 
   if (dbError) throw dbError
+}
+
+// Actualiza campos del perfil del usuario (datos personales, dirección o
+// datos fiscales). Recibe solo las llaves que se quieren modificar y
+// devuelve el registro completo ya actualizado, con el mismo shape que
+// getPerfilUsuario, para que el contexto pueda reemplazar el estado local
+// sin volver a pedir todo el perfil.
+export type CamposPerfilEditable = Partial<{
+  nombre: string; apellido: string; curp: string | null; telefono: string | null
+  calle: string | null; numero: string | null; colonia: string | null
+  municipio: string | null; estado_geo: string | null; codigo_postal: string | null
+  razon_social: string | null; nombre_comercial: string | null; rfc: string | null
+  regimen_fiscal: string | null; cfdi: string | null; domicilio_fiscal: string | null
+}>
+
+export async function actualizarPerfilUsuario(usuarioId: string, datos: CamposPerfilEditable) {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update(datos)
+    .eq('id', usuarioId)
+    .select(`
+      id, nombre, apellido, email, telefono, requiere_cambio_password,
+      curp, calle, numero, colonia, municipio, estado_geo, codigo_postal,
+      razon_social, nombre_comercial, rfc, regimen_fiscal, cfdi, domicilio_fiscal
+    `)
+    .single()
+
+  if (error) throw error
+  return data
 }
 
 // Crea la fila en `usuarios` a partir de los datos que quedaron en
@@ -291,4 +329,99 @@ export async function getUrlFotoEvidencia(path: string) {
   const { data, error } = await supabase.storage.from('evidencias-viaje').createSignedUrl(path, 3600)
   if (error) throw error
   return data?.signedUrl ?? null
+}
+
+// ── VEHÍCULOS ───────────────────────────────────────────────
+
+export async function getVehiculosUsuario(usuarioId: string) {
+  const { data, error } = await supabase
+    .from('vehiculos')
+    .select('id, marca, modelo, anio, color, placas, transmision, created_at')
+    .eq('usuario_id', usuarioId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function agregarVehiculoUsuario(usuarioId: string, datos: {
+  marca: string; modelo: string; anio?: string; color?: string
+  placas: string; transmision?: string
+}) {
+  const { data, error } = await supabase
+    .from('vehiculos')
+    .insert({
+      usuario_id: usuarioId,
+      marca: datos.marca.toUpperCase(),
+      modelo: datos.modelo.toUpperCase(),
+      anio: datos.anio ?? null,
+      color: datos.color?.toUpperCase() ?? null,
+      placas: datos.placas.toUpperCase(),
+      transmision: datos.transmision ?? null,
+    })
+    .select('id, marca, modelo, anio, color, placas, transmision, created_at')
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function eliminarVehiculoUsuario(vehiculoId: string) {
+  const { error } = await supabase.from('vehiculos').delete().eq('id', vehiculoId)
+  if (error) throw error
+}
+
+// ── DOCUMENTOS ──────────────────────────────────────────────
+
+// Documentos del usuario (INE, comprobante de domicilio, constancia
+// fiscal). entidad_id apunta al id de `usuarios`, igual que se registra
+// desde /api/registro-usuario durante el alta.
+export async function getDocumentosUsuario(usuarioId: string) {
+  const { data, error } = await supabase
+    .from('documentos')
+    .select('id, tipo_doc, entidad_tipo, entidad_id, folio, fecha_vencimiento, estatus, archivo_url, created_at')
+    .eq('entidad_tipo', 'Usuario')
+    .eq('entidad_id', usuarioId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+// El bucket `documentos` es privado — misma lógica que las fotos de
+// evidencia: se firma la URL al momento de mostrarla.
+export async function getUrlDocumento(path: string) {
+  const { data, error } = await supabase.storage.from('documentos').createSignedUrl(path, 3600)
+  if (error) throw error
+  return data?.signedUrl ?? null
+}
+
+// Sube (o reemplaza) un documento del usuario ya autenticado. El bucket
+// `documentos` es privado y las subidas durante el registro las hace el
+// servidor con la service role key; para subidas posteriores desde la app
+// reutilizamos ese mismo patrón vía una ruta API que valida la sesión.
+export async function subirDocumentoUsuario(
+  file: File,
+  slot: 'ine-frente' | 'ine-reverso' | 'comprobante-domicilio' | 'constancia-fiscal',
+  tipoDoc: string,
+) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Sesión no válida.')
+
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('slot', slot)
+  formData.append('tipoDoc', tipoDoc)
+
+  const res = await fetch('/api/subir-documento-usuario', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null) as { error?: string } | null
+    throw new Error(data?.error ?? 'No se pudo subir el documento.')
+  }
+  return res.json() as Promise<{ ok: true; path: string }>
 }

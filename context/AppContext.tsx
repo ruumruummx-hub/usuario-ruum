@@ -5,7 +5,8 @@ import { supabase } from '@/lib/supabase'
 import {
   getPerfilUsuario, crearPerfilDesdeAuth, getMisViajes,
   solicitarViaje as solicitarViajeQuery, suscribirMisViajes,
-  completarCambioPassword,
+  completarCambioPassword, actualizarPerfilUsuario,
+  type CamposPerfilEditable,
 } from '@/lib/queries/usuario'
 import type { ViewId, StepId } from '@/lib/types'
 import type { User } from '@supabase/supabase-js'
@@ -34,6 +35,19 @@ export interface UsuarioPerfil {
   email: string | null
   telefono: string | null
   requiere_cambio_password: boolean
+  curp: string | null
+  calle: string | null
+  numero: string | null
+  colonia: string | null
+  municipio: string | null
+  estado_geo: string | null
+  codigo_postal: string | null
+  razon_social: string | null
+  nombre_comercial: string | null
+  rfc: string | null
+  regimen_fiscal: string | null
+  cfdi: string | null
+  domicilio_fiscal: string | null
 }
 
 type UsuarioPerfilInsert = {
@@ -72,6 +86,7 @@ interface AppContextType {
   solicitarViaje: (datos: DatosSolicitud) => Promise<boolean>
   recargarViajes: () => Promise<void>
   cambiarPasswordObligatorio: (nuevaPassword: string) => Promise<boolean>
+  actualizarPerfil: (datos: CamposPerfilEditable) => Promise<boolean>
 }
 
 export interface DatosSolicitud {
@@ -124,13 +139,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return perfil as UsuarioPerfil | null
   }
 
+  // Carga el perfil del usuario autenticado y, solo si la consulta tuvo
+  // éxito y confirmó que NO existe fila (no si la consulta falló por algún
+  // otro motivo), crea una a partir de los metadatos de auth. Compartida
+  // entre la verificación inicial de sesión y el listener de cambios, para
+  // no duplicar esta lógica — y sobre todo, para no duplicar el bug donde
+  // un error de consulta se confundía con "usuario sin perfil".
+  const sincronizarPerfil = async (user: User) => {
+    try {
+      const perfil = await cargarPerfil(user.id)
+      if (!perfil) await crearPerfilLocal(user)
+    } catch (e) {
+      console.error('Error sincronizando el perfil del usuario:', e)
+    }
+  }
+
   // ── Verificar sesión al montar ─────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setAutenticado(true)
-        const perfil = await cargarPerfil(session.user.id)
-        if (!perfil) await crearPerfilLocal(session.user)
+        await sincronizarPerfil(session.user)
       }
       setAuthReady(true)
     })
@@ -138,8 +167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setAutenticado(true)
-        const perfil = await cargarPerfil(session.user.id)
-        if (!perfil) await crearPerfilLocal(session.user)
+        await sincronizarPerfil(session.user)
       } else {
         setAutenticado(false)
         setUsuario(null)
@@ -176,16 +204,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Solicitar viaje ────────────────────────────────────────────────────────
   const solicitarViaje = async (datos: DatosSolicitud): Promise<boolean> => {
-    // Si usuario aún no cargó, intentar obtenerlo de la sesión activa
-    let u = usuarioRef.current
-    if (!u) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return false
-      u = await cargarPerfil(user.id)
-      if (!u) return false
-    }
-
     try {
+      // Si usuario aún no cargó, intentar obtenerlo de la sesión activa
+      let u = usuarioRef.current
+      if (!u) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return false
+        u = await cargarPerfil(user.id)
+        if (!u) return false
+      }
+
       await solicitarViajeQuery(u, datos)
       await recargarViajes()
       return true
@@ -211,6 +239,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // ── Actualizar datos del perfil (personales, dirección o fiscales) ────────
+  const actualizarPerfil = async (datos: CamposPerfilEditable): Promise<boolean> => {
+    const u = usuarioRef.current
+    if (!u) return false
+    try {
+      const actualizado = await actualizarPerfilUsuario(u.id, datos)
+      setUsuario(actualizado as UsuarioPerfil)
+      usuarioRef.current = actualizado as UsuarioPerfil
+      return true
+    } catch (e) {
+      console.error('Error actualizando perfil:', e)
+      return false
+    }
+  }
+
   return (
     <AppContext.Provider value={{
       currentView, currentStep,
@@ -221,6 +264,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       usuario, misViajes, cargandoViajes,
       solicitarViaje, recargarViajes,
       cambiarPasswordObligatorio,
+      actualizarPerfil,
     }}>
       {children}
     </AppContext.Provider>

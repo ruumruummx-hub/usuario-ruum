@@ -44,4 +44,23 @@ export interface Usuario {
   id: string; auth_id: string | null; empresa_id: string | null
   nombre: string; apellido: string; email: string; telefono: string | null
   tipo: string; estatus: string; viajes_solicitados: number; created_at: string
+  curp: string | null
+  calle: string | null; numero: string | null; colonia: string | null
+  municipio: string | null; estado_geo: string | null; codigo_postal: string | null
+  razon_social: string | null; nombre_comercial: string | null; rfc: string | null
+  regimen_fiscal: string | null; cfdi: string | null; domicilio_fiscal: string | null
+  requiere_cambio_password: boolean
+}
+
+export interface Vehiculo {
+  id: string; usuario_id: string | null
+  marca: string; modelo: string; anio: string | null; color: string | null
+  placas: string; transmision: string | null; created_at: string
+}
+
+export interface Documento {
+  id: string
+  tipo_doc: string; entidad_tipo: string; entidad_id: string
+  folio: string | null; fecha_vencimiento: string | null
+  estatus: string; archivo_url: string; created_at: string
 }
