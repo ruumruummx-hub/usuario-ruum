@@ -33,11 +33,21 @@ const statusColor: Record<string, string> = {
 }
 
 export default function ViewDetalleViaje() {
-  const { showView, viajeSeleccionado, setViajeSeleccionado, recargarViajes, usuario } = useApp()
+  const { showView, viajeSeleccionado, recargarViajes, usuario, misViajes } = useApp()
   const [cancelando, setCancelando] = useState(false)
   const [errorCancelacion, setErrorCancelacion] = useState('')
   const [mostrarDetalleConductor, setMostrarDetalleConductor] = useState(false)
-  const viaje = viajeSeleccionado
+
+  // `misViajes` se mantiene al día por la suscripción realtime de
+  // AppContext (cualquier cambio en `viajes` del usuario dispara un
+  // refetch con sus joins, incluido `conductores`). `viajeSeleccionado`
+  // en cambio es solo la foto fija que se guardó al tocar la tarjeta en
+  // Mis Viajes. Si el admin asigna conductor o el conductor acepta el
+  // viaje mientras esta pantalla está abierta, sin esto la vista se
+  // quedaría congelada con el estado anterior. Se busca la versión viva
+  // por id y se cae a la foto fija solo si todavía no llega la lista
+  // (p. ej. justo al entrar a esta vista).
+  const viaje = misViajes.find(v => v.id === viajeSeleccionado?.id) ?? viajeSeleccionado
 
   if (!viaje) {
     return (
@@ -72,7 +82,11 @@ export default function ViewDetalleViaje() {
     setErrorCancelacion('')
     try {
       await cancelarViajeUsuario(viaje.id)
-      setViajeSeleccionado({ ...viaje, status: 'Cancelado' })
+      // Una sola fuente de verdad: ya no se "parchea" viajeSeleccionado a
+      // mano, porque `viaje` ahora se deriva de `misViajes` (ver arriba) y
+      // recargarViajes() la deja al día con el estatus real que confirmó
+      // el RPC, en vez de asumir que la cancelación quedó exactamente como
+      // se pidió.
       await recargarViajes()
     } catch (e) {
       console.error('Error cancelando viaje:', e)
@@ -95,7 +109,10 @@ export default function ViewDetalleViaje() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setMostrarDetalleConductor(false)}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <div><p className="text-xs font-bold text-slate-400 uppercase">Conductor asignado</p><h3 className="text-lg font-bold text-slate-900">Detalle operativo</h3></div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase">Conductor asignado</p>
+                <h3 className="text-lg font-bold text-slate-900">Detalle operativo</h3>
+              </div>
               <button onClick={() => setMostrarDetalleConductor(false)} className="w-9 h-9 rounded-full bg-slate-100 text-slate-500">✕</button>
             </div>
             <div className="p-5">
@@ -104,16 +121,34 @@ export default function ViewDetalleViaje() {
                 <img src={fotoConductor} alt={`${conductor.nombre} ${conductor.apellido}`} className="w-20 h-20 rounded-full object-cover border-4 border-white shadow" />
                 <div className="min-w-0">
                   <p className="text-lg font-bold text-slate-900">{conductor.nombre} {conductor.apellido}</p>
-                  <span className={`inline-flex mt-1 px-2 py-1 rounded-full text-[10px] font-bold ${certificacionActiva ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{conductor.certificacion ?? 'Pendiente de validación'}</span>
+                  <span className={`inline-flex mt-1 px-2 py-1 rounded-full text-[10px] font-bold ${certificacionActiva ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {conductor.certificacion ?? 'Pendiente de validación'}
+                  </span>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-slate-50 rounded-xl p-3"><p className="text-xs text-slate-400">Calificación</p><p className="font-bold text-slate-800"><FontAwesomeIcon icon={faStar} className="text-amber-400 mr-1" />{Number(conductor.calificacion ?? 0).toFixed(1)}</p></div>
-                <div className="bg-slate-50 rounded-xl p-3"><p className="text-xs text-slate-400">Viajes realizados</p><p className="font-bold text-slate-800">{conductor.viajes_realizados ?? 0}</p></div>
-                <div className="bg-slate-50 rounded-xl p-3"><p className="text-xs text-slate-400">Disponibilidad</p><p className="font-bold text-slate-800">{conductor.disponibilidad ?? '—'}</p></div>
-                <div className="bg-slate-50 rounded-xl p-3"><p className="text-xs text-slate-400">Zona</p><p className="font-bold text-slate-800 truncate">{[conductor.municipio, conductor.estado_geo].filter(Boolean).join(', ') || '—'}</p></div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Calificación</p>
+                  <p className="font-bold text-slate-800"><FontAwesomeIcon icon={faStar} className="text-amber-400 mr-1" />{Number(conductor.calificacion ?? 0).toFixed(1)}</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Viajes realizados</p>
+                  <p className="font-bold text-slate-800">{conductor.viajes_realizados ?? 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Disponibilidad</p>
+                  <p className="font-bold text-slate-800">{conductor.disponibilidad ?? '—'}</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400">Zona</p>
+                  <p className="font-bold text-slate-800 truncate">{[conductor.municipio, conductor.estado_geo].filter(Boolean).join(', ') || '—'}</p>
+                </div>
               </div>
-              {conductor.telefono && <a href={`tel:${conductor.telefono}`} className="block w-full bg-slate-900 text-white text-center font-semibold py-3 rounded-xl">Llamar al conductor · {conductor.telefono}</a>}
+              {conductor.telefono && (
+                <a href={`tel:${conductor.telefono}`} className="block w-full bg-slate-900 text-white text-center font-semibold py-3 rounded-xl">
+                  Llamar al conductor · {conductor.telefono}
+                </a>
+              )}
               <p className="text-[10px] text-slate-400 text-center mt-3">ID operativo: {conductor.id.slice(0, 8).toUpperCase()}</p>
             </div>
           </div>
